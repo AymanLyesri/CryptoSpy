@@ -12,17 +12,17 @@ export default function ToastContainer({ toasts, onRemove }: ToastContainerProps
   if (toasts.length === 0) return null;
 
   const getToastStyles = (type: Toast['type']) => {
-    const baseStyles = "px-4 py-3 rounded-lg shadow-lg border flex items-center space-x-3 min-w-80 max-w-md";
+    const baseStyles = "px-6 py-4 rounded-2xl shadow-2xl border flex items-center space-x-4 min-w-96 max-w-md backdrop-blur-md transition-all duration-300";
     
     switch (type) {
       case 'success':
-        return `${baseStyles} bg-green-50 border-green-200 text-green-800`;
+        return `${baseStyles} bg-emerald-50/90 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200`;
       case 'warning':
-        return `${baseStyles} bg-yellow-50 border-yellow-200 text-yellow-800`;
+        return `${baseStyles} bg-amber-50/90 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-200`;
       case 'error':
-        return `${baseStyles} bg-red-50 border-red-200 text-red-800`;
+        return `${baseStyles} bg-red-50/90 dark:bg-red-900/30 border-red-200 dark:border-red-700 text-red-800 dark:text-red-200`;
       default:
-        return `${baseStyles} bg-blue-50 border-blue-200 text-blue-800`;
+        return `${baseStyles} bg-blue-50/90 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200`;
     }
   };
 

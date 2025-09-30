@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -43,6 +43,110 @@ export default function CryptoPriceChart({
   currentPrice,
 }: CryptoPriceChartProps) {
   const chartRef = useRef<ChartJS<'line'>>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Debug logging to see what data we're receiving
+  useEffect(() => {
+    console.log('Chart data received:', {
+      dataLength: data?.length,
+      timeRange,
+      cryptoName,
+      firstDataPoint: data?.[0],
+      lastDataPoint: data?.[data?.length - 1],
+      allDataPoints: data
+    });
+  }, [data, timeRange, cryptoName]);
+
+  // Early return if no valid data
+  if (!data || data.length === 0) {
+    return (
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+        <div className="text-center py-12">
+          <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
+            No chart data available
+          </div>
+          <div className="text-gray-400 dark:text-gray-500 text-sm">
+            Unable to load price history for {cryptoName}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Filter out invalid data points
+  const validData = data.filter(point => 
+    point && 
+    typeof point.timestamp === 'number' && 
+    typeof point.price === 'number' && 
+    point.price > 0 &&
+    !isNaN(point.price) &&
+    !isNaN(point.timestamp)
+  );
+
+  if (validData.length === 0) {
+    return (
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+        <div className="text-center py-12">
+          <div className="text-red-500 dark:text-red-400 text-lg mb-4">
+            Invalid chart data
+          </div>
+          <div className="text-gray-400 dark:text-gray-500 text-sm">
+            Price data contains invalid values
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Detect theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setIsDarkMode(isDark);
+    };
+    
+    checkTheme();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+
+  // Theme-aware color functions
+  const getColors = () => {
+    if (isDarkMode) {
+      return {
+        positive: '#10b981', // emerald-500
+        negative: '#ef4444', // red-500
+        positiveLight: 'rgba(16, 185, 129, 0.2)',
+        negativeLight: 'rgba(239, 68, 68, 0.2)',
+        textPrimary: '#f9fafb', // gray-50
+        textSecondary: '#d1d5db', // gray-300
+        gridColor: 'rgba(209, 213, 219, 0.1)',
+        tooltipBg: 'rgba(17, 24, 39, 0.95)', // gray-900 with opacity
+        tooltipBorder: '#374151', // gray-700
+      };
+    } else {
+      return {
+        positive: '#059669', // emerald-600
+        negative: '#dc2626', // red-600
+        positiveLight: 'rgba(5, 150, 105, 0.15)',
+        negativeLight: 'rgba(220, 38, 38, 0.15)',
+        textPrimary: '#1f2937', // gray-800
+        textSecondary: '#6b7280', // gray-500
+        gridColor: 'rgba(107, 114, 128, 0.2)',
+        tooltipBg: 'rgba(255, 255, 255, 0.95)',
+        tooltipBorder: '#e5e7eb', // gray-200
+      };
+    }
+  };
+
+  const colors = getColors();
 
   // Format timestamp based on time range
   const formatTimestamp = (timestamp: number): string => {
@@ -85,36 +189,35 @@ export default function CryptoPriceChart({
     }).format(price);
   };
 
-  // Calculate price change
-  const priceChange = data.length > 1 ? 
-    ((data[data.length - 1].price - data[0].price) / data[0].price) * 100 : 0;
+  // Calculate price change using valid data
+  const priceChange = validData.length > 1 ? 
+    ((validData[validData.length - 1].price - validData[0].price) / validData[0].price) * 100 : 0;
   
   const isPositiveChange = priceChange >= 0;
 
-  // Prepare chart data
+  // Prepare chart data with theme-aware colors using valid data
   const chartData = {
-    labels: data.map(point => formatTimestamp(point.timestamp)),
+    labels: validData.map(point => formatTimestamp(point.timestamp)),
     datasets: [
       {
         label: `${cryptoName} Price`,
-        data: data.map(point => point.price),
-        borderColor: isPositiveChange ? '#10b981' : '#ef4444',
-        backgroundColor: isPositiveChange 
-          ? 'rgba(16, 185, 129, 0.1)' 
-          : 'rgba(239, 68, 68, 0.1)',
-        borderWidth: 2,
+        data: validData.map(point => point.price),
+        borderColor: isPositiveChange ? colors.positive : colors.negative,
+        backgroundColor: isPositiveChange ? colors.positiveLight : colors.negativeLight,
+        borderWidth: 3,
         fill: true,
-        tension: 0.1,
+        tension: 0.4,
         pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: isPositiveChange ? '#10b981' : '#ef4444',
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
+        pointHoverRadius: 8,
+        pointHoverBackgroundColor: isPositiveChange ? colors.positive : colors.negative,
+        pointHoverBorderColor: isDarkMode ? '#1f2937' : '#ffffff',
+        pointHoverBorderWidth: 3,
+        pointBorderWidth: 0,
       },
     ],
   };
 
-  // Chart options
+  // Chart options with theme-aware styling
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -122,21 +225,35 @@ export default function CryptoPriceChart({
       mode: 'index' as const,
       intersect: false,
     },
+    animation: {
+      duration: 750,
+      easing: 'easeInOutQuart' as const,
+    },
     plugins: {
       legend: {
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: isPositiveChange ? '#10b981' : '#ef4444',
+        backgroundColor: colors.tooltipBg,
+        titleColor: colors.textPrimary,
+        bodyColor: colors.textPrimary,
+        borderColor: colors.tooltipBorder,
         borderWidth: 1,
         displayColors: false,
+        cornerRadius: 12,
+        padding: 12,
+        titleFont: {
+          size: 14,
+          weight: 'bold' as const,
+        },
+        bodyFont: {
+          size: 13,
+          weight: 'normal' as const,
+        },
         callbacks: {
           title: function(context: any) {
             const dataIndex = context[0].dataIndex;
-            const timestamp = data[dataIndex].timestamp;
+            const timestamp = validData[dataIndex].timestamp;
             return new Date(timestamp).toLocaleString('en-US', {
               year: 'numeric',
               month: 'short',
@@ -157,25 +274,36 @@ export default function CryptoPriceChart({
         grid: {
           display: false,
         },
+        border: {
+          display: false,
+        },
         ticks: {
-          color: '#6b7280',
+          color: colors.textSecondary,
           font: {
-            size: 11,
+            size: 12,
+            weight: 'normal' as const,
           },
-          maxTicksLimit: timeRange === 'hourly' ? 8 : 10,
+          maxTicksLimit: timeRange === 'hourly' ? 6 : 8,
+          padding: 8,
         },
       },
       y: {
         display: true,
         position: 'right' as const,
         grid: {
-          color: 'rgba(107, 114, 128, 0.1)',
+          color: colors.gridColor,
+          lineWidth: 1,
+        },
+        border: {
+          display: false,
         },
         ticks: {
-          color: '#6b7280',
+          color: colors.textSecondary,
           font: {
-            size: 11,
+            size: 12,
+            weight: 'normal' as const,
           },
+          padding: 12,
           callback: function(value: any) {
             return formatPrice(value);
           },
@@ -184,40 +312,43 @@ export default function CryptoPriceChart({
     },
     elements: {
       point: {
-        hoverRadius: 8,
+        hoverRadius: 10,
+        hitRadius: 15,
       },
     },
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-3xl">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h3 className="text-xl font-bold text-gray-900">
-            {cryptoName} ({cryptoSymbol.toUpperCase()})
+          <h3 className="text-2xl font-light text-gray-900 dark:text-white">
+            {cryptoName} <span className="text-gray-500 dark:text-gray-400 text-lg">({cryptoSymbol.toUpperCase()})</span>
           </h3>
-          <div className="flex items-center space-x-4 mt-2">
-            <span className="text-2xl font-bold text-gray-900">
+          <div className="flex items-center space-x-4 mt-3">
+            <span className="text-3xl font-bold text-gray-900 dark:text-white">
               {formatPrice(currentPrice)}
             </span>
-            <span className={`text-sm font-medium ${
-              isPositiveChange ? 'text-green-600' : 'text-red-600'
+            <span className={`text-lg font-medium px-3 py-1 rounded-full transition-all duration-300 ${
+              isPositiveChange 
+                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' 
+                : 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30'
             }`}>
               {isPositiveChange ? '+' : ''}{priceChange.toFixed(2)}%
             </span>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-sm text-gray-500 mb-1">
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1 font-medium">
             {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Chart
           </div>
-          <div className="text-xs text-gray-400">
-            {data.length} data points
+          <div className="text-xs text-gray-400 dark:text-gray-500">
+            {validData.length} data points
           </div>
         </div>
       </div>
       
-      <div className="h-80 relative">
+      <div className="h-80 relative rounded-2xl overflow-hidden">
         <Line
           ref={chartRef}
           data={chartData}
@@ -226,29 +357,29 @@ export default function CryptoPriceChart({
       </div>
       
       {/* Chart Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-gray-200">
-        <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">High</div>
-          <div className="text-sm font-medium text-gray-900">
-            {formatPrice(Math.max(...data.map(d => d.price)))}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">High</div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {formatPrice(Math.max(...validData.map(d => d.price)))}
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">Low</div>
-          <div className="text-sm font-medium text-gray-900">
-            {formatPrice(Math.min(...data.map(d => d.price)))}
+        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">Low</div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {formatPrice(Math.min(...validData.map(d => d.price)))}
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">First</div>
-          <div className="text-sm font-medium text-gray-900">
-            {formatPrice(data[0]?.price || 0)}
+        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">First</div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {formatPrice(validData[0]?.price || 0)}
           </div>
         </div>
-        <div className="text-center">
-          <div className="text-xs text-gray-500 mb-1">Latest</div>
-          <div className="text-sm font-medium text-gray-900">
-            {formatPrice(data[data.length - 1]?.price || 0)}
+        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">Latest</div>
+          <div className="text-lg font-bold text-gray-900 dark:text-white">
+            {formatPrice(validData[validData.length - 1]?.price || 0)}
           </div>
         </div>
       </div>

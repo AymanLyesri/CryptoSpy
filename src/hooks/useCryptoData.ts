@@ -68,10 +68,16 @@ export function useCryptoData(): UseCryptoDataReturn {
     loadPopularCryptos();
   }, []);
 
-  // Search cryptocurrencies
+  // Search cryptocurrencies with improved debouncing
   const searchCryptos = useCallback(async (query: string) => {
-    if (!query.trim()) {
+    if (!query.trim() || query.length < 2) {
       setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    // Don't search if already searching the same query
+    if (isSearching) {
       return;
     }
 
@@ -88,20 +94,30 @@ export function useCryptoData(): UseCryptoDataReturn {
     } finally {
       setIsSearching(false);
     }
-  }, []);
+  }, [isSearching]);
 
   // Load price history for a cryptocurrency
   const loadPriceHistory = useCallback(async (coinId: string) => {
+    console.log(`Loading price history for: ${coinId}`);
     setIsLoadingHistory(true);
     setHistoryError(null);
     
     try {
       const history = await CoinGeckoService.getCryptoPriceHistory(coinId);
+      console.log('Price history loaded:', {
+        coinId: history.cryptoId,
+        hourly: history.hourly?.length || 0,
+        daily: history.daily?.length || 0,
+        weekly: history.weekly?.length || 0,
+        monthly: history.monthly?.length || 0,
+        sampleHourlyData: history.hourly?.slice(0, 3),
+        sampleDailyData: history.daily?.slice(0, 3)
+      });
       setPriceHistory(history);
     } catch (error) {
+      console.error('Error loading price history:', error);
       setHistoryError(error instanceof Error ? error.message : 'Failed to load price history');
       setPriceHistory(null);
-      console.error('Error loading price history:', error);
     } finally {
       setIsLoadingHistory(false);
     }

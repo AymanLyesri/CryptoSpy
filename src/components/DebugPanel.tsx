@@ -1,0 +1,93 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { CoinGeckoService } from '../services/coinGeckoApi';
+
+export default function DebugPanel() {
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  const runTests = async () => {
+    try {
+      console.log('Running API tests...');
+      
+      // Test 1: Get popular cryptos
+      const popularCryptos = await CoinGeckoService.getPopularCryptos(5);
+      console.log('Popular cryptos test:', popularCryptos);
+      
+      if (popularCryptos.length > 0) {
+        // Test 2: Get price history for first crypto
+        const firstCrypto = popularCryptos[0];
+        console.log('Testing price history for:', firstCrypto.name);
+        
+        const priceHistory = await CoinGeckoService.getCryptoPriceHistory(firstCrypto.id);
+        console.log('Price history test:', priceHistory);
+        
+        setDebugInfo({
+          popularCryptos: popularCryptos.length,
+          firstCrypto: firstCrypto.name,
+          priceHistory: {
+            cryptoId: priceHistory.cryptoId,
+            hourly: priceHistory.hourly?.length || 0,
+            daily: priceHistory.daily?.length || 0,
+            weekly: priceHistory.weekly?.length || 0,
+            monthly: priceHistory.monthly?.length || 0,
+            sampleData: priceHistory.daily?.slice(0, 3) || []
+          },
+          apiStats: CoinGeckoService.getApiStats()
+        });
+      }
+    } catch (error) {
+      console.error('API test failed:', error);
+      setDebugInfo({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
+
+  useEffect(() => {
+    // Run tests when component mounts
+    runTests();
+  }, []);
+
+  if (!isVisible) {
+    return (
+      <button
+        onClick={() => setIsVisible(true)}
+        className="fixed top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded text-sm z-50"
+      >
+        Debug
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed top-4 left-4 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-w-md max-h-96 overflow-auto shadow-lg z-50">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-bold text-lg">Debug Info</h3>
+        <button 
+          onClick={() => setIsVisible(false)}
+          className="text-gray-500 hover:text-gray-700"
+        >
+          ✕
+        </button>
+      </div>
+      
+      {debugInfo ? (
+        <pre className="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded overflow-auto">
+          {JSON.stringify(debugInfo, null, 2)}
+        </pre>
+      ) : (
+        <div className="text-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+          <div className="text-sm text-gray-600">Running tests...</div>
+        </div>
+      )}
+      
+      <button
+        onClick={runTests}
+        className="mt-3 w-full bg-blue-500 text-white py-1 px-3 rounded text-sm hover:bg-blue-600"
+      >
+        Run Tests Again
+      </button>
+    </div>
+  );
+}

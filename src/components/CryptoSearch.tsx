@@ -25,13 +25,17 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
     isLoadingPopular 
   } = useCryptoData();
 
-  // Debounced search effect
+  // Enhanced debounced search effect
   useEffect(() => {
+    // Clear previous timeout
     const timeoutId = setTimeout(() => {
-      if (query.trim()) {
+      if (query.trim() && query.length >= 2) {
         searchCryptos(query);
+      } else if (query.trim() === '') {
+        // Clear search by calling with empty query
+        searchCryptos('');
       }
-    }, 300); // 300ms debounce
+    }, 500); // Increased debounce time to reduce API calls
 
     return () => clearTimeout(timeoutId);
   }, [query, searchCryptos]);
@@ -117,7 +121,7 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
   };
 
   return (
-    <div ref={searchRef} className="relative w-full max-w-md mx-auto">
+    <div ref={searchRef} className="relative w-full max-w-lg mx-auto">
       <div className="relative">
         <input
           ref={inputRef}
@@ -127,14 +131,14 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
           onKeyDown={handleKeyDown}
           onFocus={() => !query.trim() && setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full px-4 py-3 pr-10 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
+          className="w-full px-6 py-4 pr-12 text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-2xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent outline-none transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl placeholder:text-gray-500 dark:placeholder:text-gray-400"
         />
-        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           {isSearching || isLoadingPopular ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 dark:border-blue-400 border-t-transparent"></div>
           ) : (
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="w-5 h-5 text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -152,9 +156,9 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
 
       {/* Dropdown */}
       {isOpen && cryptosToShow.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-10 w-full mt-2 bg-white/95 dark:bg-gray-800/95 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl backdrop-blur-md max-h-80 overflow-y-auto transition-all duration-300">
           {!query.trim() && (
-            <div className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100 bg-gray-50">
+            <div className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-700/50 font-medium">
               Popular Cryptocurrencies
             </div>
           )}
@@ -162,10 +166,10 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
             <div
               key={crypto.id}
               onClick={() => handleSelect(crypto)}
-              className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150 ${
+              className={`px-6 py-4 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-all duration-200 ${
                 index === highlightedIndex
-                  ? 'bg-blue-50 border-blue-200'
-                  : 'hover:bg-gray-50'
+                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
               }`}
             >
               <div className="flex items-center justify-between">

@@ -211,28 +211,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Instructions */}
-        {!selectedCrypto && (
-          <div className="text-center">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                How to use Crypto Spy
-              </h3>
-              <div className="space-y-3 text-gray-600">
-                <p>� Search for any cryptocurrency by name or symbol</p>
-                <p>� View live prices and market data from CoinGecko</p>
-                <p>� Explore interactive price charts with multiple time ranges</p>
-                <p>⌨️ Use arrow keys to navigate and Enter to select</p>
-                <p>💰 All data is updated in real-time</p>
-              </div>
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <div className="text-sm text-blue-600 font-medium">
-                  💡 Try searching: Bitcoin, Ethereum, Cardano, Solana, or any crypto!
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
