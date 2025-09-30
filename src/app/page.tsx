@@ -1,37 +1,40 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import CryptoSearch from '../components/CryptoSearch';
-import CryptoPriceChart from '../components/CryptoPriceChart';
-import TimeRangeSelector from '../components/TimeRangeSelector';
-import ToastContainer from '../components/ToastContainer';
-import { Cryptocurrency } from '../types/crypto';
-import { TimeRange } from '../types/chartData';
-import { useCryptoData } from '../hooks/useCryptoData';
-import { useToast } from '../hooks/useToast';
-import ThemeToggle from '@/components/ThemeToggle';
+import { useState, useEffect } from "react";
+import CryptoSearch from "../components/CryptoSearch";
+import CryptoPriceChart from "../components/CryptoPriceChart";
+import TimeRangeSelector from "../components/TimeRangeSelector";
+import ToastContainer from "../components/ToastContainer";
+import { Cryptocurrency } from "../types/crypto";
+import { TimeRange } from "../types/chartData";
+import { useCryptoData } from "../hooks/useCryptoData";
+import { useToast } from "../hooks/useToast";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
-  const [selectedCrypto, setSelectedCrypto] = useState<Cryptocurrency | null>(null);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('daily');
-  
-  const { 
-    priceHistory, 
-    isLoadingHistory, 
-    historyError, 
-    loadPriceHistory, 
+  const [selectedCrypto, setSelectedCrypto] = useState<Cryptocurrency | null>(
+    null
+  );
+  const [selectedTimeRange, setSelectedTimeRange] =
+    useState<TimeRange>("daily");
+
+  const {
+    priceHistory,
+    isLoadingHistory,
+    historyError,
+    loadPriceHistory,
     isUsingFallbackData,
-    popularError 
+    popularError,
   } = useCryptoData();
-  
+
   const { toasts, showToast, removeToast } = useToast();
 
   // Show toast when using fallback data
   useEffect(() => {
     if (isUsingFallbackData) {
       showToast(
-        'Using offline data - API rate limit reached. Data may not be current.',
-        'warning',
+        "Using offline data - API rate limit reached. Data may not be current.",
+        "warning",
         8000
       );
     }
@@ -41,8 +44,8 @@ export default function Home() {
   useEffect(() => {
     if (popularError && isUsingFallbackData) {
       showToast(
-        'Unable to fetch live data. Showing sample cryptocurrencies.',
-        'info',
+        "Unable to fetch live data. Showing sample cryptocurrencies.",
+        "info",
         6000
       );
     }
@@ -59,19 +62,19 @@ export default function Home() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: price < 1 ? 4 : 2,
     }).format(price);
   };
 
   const formatMarketCap = (marketCap: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      notation: "compact",
       maximumFractionDigits: 1,
     }).format(marketCap);
   };
@@ -79,8 +82,13 @@ export default function Home() {
   const formatPercentage = (percentage: number) => {
     const isPositive = percentage > 0;
     return (
-      <span className={`font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-        {isPositive ? '+' : ''}{percentage.toFixed(2)}%
+      <span
+        className={`font-semibold ${
+          isPositive ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {isPositive ? "+" : ""}
+        {percentage.toFixed(2)}%
       </span>
     );
   };
@@ -88,7 +96,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <ThemeToggle/>
+      <ThemeToggle />
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
@@ -97,21 +105,39 @@ export default function Home() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
             Search and discover cryptocurrency information
           </p>
-          
+
           {/* Data Status Indicator */}
           <div className="flex justify-center mb-8">
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              isUsingFallbackData 
-                ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700'
-                : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700'
-            }`}>
-              <div className={`w-2 h-2 rounded-full mr-2 ${
-                isUsingFallbackData ? 'bg-yellow-500 dark:bg-yellow-400' : 'bg-green-500 dark:bg-green-400'
-              }`}></div>
-              {isUsingFallbackData ? 'Offline Mode' : 'Live Data'}
+            <div
+              className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                isUsingFallbackData
+                  ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700"
+                  : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full mr-2 ${
+                  isUsingFallbackData
+                    ? "bg-yellow-500 dark:bg-yellow-400"
+                    : "bg-green-500 dark:bg-green-400"
+                }`}
+              ></div>
+              <span>
+                {isUsingFallbackData ? "Limited Data Mode" : "Live Data Active"}
+              </span>
+              {popularError && (
+                <span className="ml-2 text-xs opacity-75">
+                  •{" "}
+                  {popularError.includes("401")
+                    ? "API Auth Issue"
+                    : popularError.includes("429")
+                    ? "Rate Limited"
+                    : "Connection Issue"}
+                </span>
+              )}
             </div>
           </div>
-          
+
           {/* Search Component */}
           <div className="mb-8">
             <CryptoSearch onSelect={handleCryptoSelect} />
@@ -139,11 +165,13 @@ export default function Home() {
                     {formatPrice(selectedCrypto.current_price)}
                   </div>
                   <div className="text-lg">
-                    {formatPercentage(selectedCrypto.price_change_percentage_24h)}
+                    {formatPercentage(
+                      selectedCrypto.price_change_percentage_24h
+                    )}
                   </div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
@@ -158,7 +186,9 @@ export default function Home() {
                     24h Change
                   </h3>
                   <p className="text-xl font-semibold">
-                    {formatPercentage(selectedCrypto.price_change_percentage_24h)}
+                    {formatPercentage(
+                      selectedCrypto.price_change_percentage_24h
+                    )}
                   </p>
                 </div>
               </div>
@@ -176,19 +206,30 @@ export default function Home() {
             {selectedCrypto && (
               <div className="relative">
                 {isLoadingHistory && (
-                  <div className="absolute inset-0 bg-white dark:bg-gray-800 bg-opacity-75 dark:bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                      <span className="text-gray-600 dark:text-gray-300">Loading price data...</span>
+                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+                    <div className="text-center py-12">
+                      <div className="animate-pulse">
+                        <div className="text-gray-600 dark:text-gray-300 text-lg mb-4">
+                          Loading {selectedCrypto.name} price chart...
+                        </div>
+                        <div className="w-12 h-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="text-gray-500 dark:text-gray-400 text-sm">
+                          Fetching historical data
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
-                
-                {historyError && (
+
+                {historyError && !isLoadingHistory && (
                   <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
-                    <div className="text-red-600 dark:text-red-400 font-medium">Failed to load price data</div>
-                    <div className="text-red-500 dark:text-red-400 text-sm mt-1">{historyError}</div>
-                    <button 
+                    <div className="text-red-600 dark:text-red-400 font-medium">
+                      Failed to load price data
+                    </div>
+                    <div className="text-red-500 dark:text-red-400 text-sm mt-1">
+                      {historyError}
+                    </div>
+                    <button
                       onClick={() => loadPriceHistory(selectedCrypto.id)}
                       className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
                     >
@@ -196,21 +237,23 @@ export default function Home() {
                     </button>
                   </div>
                 )}
-                
-                {priceHistory && priceHistory.cryptoId === selectedCrypto.id && (
-                  <CryptoPriceChart
-                    data={priceHistory[selectedTimeRange]}
-                    timeRange={selectedTimeRange}
-                    cryptoName={selectedCrypto.name}
-                    cryptoSymbol={selectedCrypto.symbol}
-                    currentPrice={selectedCrypto.current_price}
-                  />
-                )}
+
+                {priceHistory &&
+                  priceHistory.cryptoId === selectedCrypto.id &&
+                  !isLoadingHistory && (
+                    <CryptoPriceChart
+                      key={`${selectedCrypto.id}-${selectedTimeRange}`}
+                      data={priceHistory[selectedTimeRange] || []}
+                      timeRange={selectedTimeRange}
+                      cryptoName={selectedCrypto.name}
+                      cryptoSymbol={selectedCrypto.symbol}
+                      currentPrice={selectedCrypto.current_price}
+                    />
+                  )}
               </div>
             )}
           </div>
         )}
-
       </div>
     </div>
   );

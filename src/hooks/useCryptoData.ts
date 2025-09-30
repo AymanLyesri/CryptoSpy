@@ -57,9 +57,24 @@ export function useCryptoData(): UseCryptoDataReturn {
         setPopularCryptos(cryptos);
         setIsUsingFallbackData(false);
       } catch (error) {
-        setPopularError(error instanceof Error ? error.message : 'Failed to load cryptocurrencies');
-        setIsUsingFallbackData(true);
         console.error('Error loading popular cryptos:', error);
+        
+        // Provide more user-friendly error messages
+        let errorMessage = 'Failed to load cryptocurrencies';
+        if (error instanceof Error) {
+          if (error.message.includes('401')) {
+            errorMessage = 'API authentication issue - using limited data';
+          } else if (error.message.includes('429')) {
+            errorMessage = 'Rate limit reached - please wait a moment';
+          } else if (error.message.includes('timeout')) {
+            errorMessage = 'Request timed out - please check your connection';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        setPopularError(errorMessage);
+        setIsUsingFallbackData(true);
       } finally {
         setIsLoadingPopular(false);
       }
@@ -68,9 +83,11 @@ export function useCryptoData(): UseCryptoDataReturn {
     loadPopularCryptos();
   }, []);
 
-  // Search cryptocurrencies with improved debouncing
+  // Search cryptocurrencies with improved logic
   const searchCryptos = useCallback(async (query: string) => {
-    if (!query.trim() || query.length < 2) {
+    const trimmedQuery = query.trim();
+    
+    if (!trimmedQuery || trimmedQuery.length < 2) {
       setSearchResults([]);
       setSearchError(null);
       return;
@@ -85,12 +102,27 @@ export function useCryptoData(): UseCryptoDataReturn {
     setSearchError(null);
     
     try {
-      const results = await CoinGeckoService.searchCryptos(query);
+      const results = await CoinGeckoService.searchCryptos(trimmedQuery);
       setSearchResults(results);
     } catch (error) {
-      setSearchError(error instanceof Error ? error.message : 'Search failed');
-      setSearchResults([]);
       console.error('Error searching cryptos:', error);
+      
+      // Provide user-friendly error messages for search
+      let errorMessage = 'Search failed';
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Search unavailable - API authentication issue';
+        } else if (error.message.includes('429')) {
+          errorMessage = 'Too many searches - please wait a moment';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Search timed out - please try again';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSearchError(errorMessage);
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -116,7 +148,22 @@ export function useCryptoData(): UseCryptoDataReturn {
       setPriceHistory(history);
     } catch (error) {
       console.error('Error loading price history:', error);
-      setHistoryError(error instanceof Error ? error.message : 'Failed to load price history');
+      
+      // Provide user-friendly error messages for price history
+      let errorMessage = 'Failed to load price history';
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Chart data unavailable - API authentication issue';
+        } else if (error.message.includes('429')) {
+          errorMessage = 'Rate limit reached - please wait before loading chart';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Chart data request timed out - please try again';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setHistoryError(errorMessage);
       setPriceHistory(null);
     } finally {
       setIsLoadingHistory(false);

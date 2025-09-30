@@ -172,4 +172,4 @@ export const getCacheTTL = (dataType: 'market' | 'search' | 'historical' | 'pric
 };
 
 export const apiCache = new MemoryCache(1000);
-export const rateLimiter = new RateLimiter(6, 60000); // 6 requests per minute to be very safe
+export const rateLimiter = new RateLimiter(10, 60000); // 6 requests per minute to be very safe
