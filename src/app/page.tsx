@@ -94,7 +94,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <ThemeToggle />
       <div className="max-w-4xl mx-auto">
@@ -109,10 +109,15 @@ export default function Home() {
           {/* Data Status Indicator */}
           <div className="flex justify-center mb-8">
             <div
-              className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "var(--radius-button)",
+                border: "1px solid",
+              }}
+              className={`inline-flex items-center text-sm font-medium transition-all duration-300 ${
                 isUsingFallbackData
-                  ? "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-700"
-                  : "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700"
+                  ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700"
+                  : "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
               }`}
             >
               <div
@@ -148,14 +153,19 @@ export default function Home() {
         {selectedCrypto && (
           <div className="space-y-6">
             {/* Crypto Info Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div
+              style={{
+                padding: "var(--spacing-card)",
+                borderRadius: "var(--radius-card)",
+                boxShadow: "var(--shadow-card)",
+              }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {selectedCrypto.name}
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400 uppercase font-medium">
+                    <h2 className="text-heading">{selectedCrypto.name}</h2>
+                    <p className="text-muted uppercase font-medium">
                       {selectedCrypto.symbol}
                     </p>
                   </div>
@@ -173,18 +183,26 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    Market Cap
-                  </h3>
+                <div
+                  style={{
+                    padding: "var(--spacing-card)",
+                    borderRadius: "var(--radius-card)",
+                  }}
+                  className="bg-gray-50 dark:bg-gray-700"
+                >
+                  <h3 className="text-label mb-1">Market Cap</h3>
                   <p className="text-xl font-semibold text-gray-900 dark:text-white">
                     {formatMarketCap(selectedCrypto.market_cap)}
                   </p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                    24h Change
-                  </h3>
+                <div
+                  style={{
+                    padding: "var(--spacing-card)",
+                    borderRadius: "var(--radius-card)",
+                  }}
+                  className="bg-gray-50 dark:bg-gray-700"
+                >
+                  <h3 className="text-label mb-1">24h Change</h3>
                   <p className="text-xl font-semibold">
                     {formatPercentage(
                       selectedCrypto.price_change_percentage_24h

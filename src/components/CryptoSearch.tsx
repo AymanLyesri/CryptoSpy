@@ -162,11 +162,12 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
             }
           }}
           placeholder={placeholder}
-          className={`w-full px-6 py-4 pr-12 rounded-2xl focus:ring-2 focus:border-transparent outline-none transition-all duration-300 backdrop-blur-sm shadow-lg hover:shadow-xl ${
-            isDarkMode
-              ? 'text-gray-100 bg-gray-800/80 border-gray-700 focus:ring-blue-400 placeholder:text-gray-400'
-              : 'text-gray-900 bg-white/80 border-gray-200 focus:ring-blue-500 placeholder:text-gray-500'
-          } border`}
+          style={{ 
+            borderRadius: 'var(--radius-input)',
+            padding: 'var(--spacing-card) 3rem var(--spacing-card) var(--spacing-card)',
+            boxShadow: 'var(--shadow-card)'
+          }}
+          className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:border-transparent focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           {isSearching || isLoadingPopular ? (
@@ -195,7 +196,10 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
 
       {/* Dropdown */}
       {isOpen && cryptosToShow.length > 0 && (
-        <div className={`absolute z-10 w-full mt-2 border rounded-2xl shadow-2xl backdrop-blur-md max-h-80 overflow-y-auto transition-all duration-300 ${
+        <div style={{ 
+          borderRadius: 'var(--radius-card)',
+          boxShadow: 'var(--shadow-card-hover)'
+        }} className={`absolute z-10 w-full mt-2 border backdrop-blur-md max-h-80 overflow-y-auto transition-all duration-300 ${
           isDarkMode 
             ? 'bg-gray-800/95 border-gray-700' 
             : 'bg-white/95 border-gray-200'
@@ -269,7 +273,10 @@ export default function CryptoSearch({ onSelect, placeholder = "Search cryptocur
 
       {/* No results */}
       {query.trim() !== '' && !isSearching && searchResults.length === 0 && (
-        <div className={`absolute z-10 w-full mt-2 border rounded-2xl shadow-2xl backdrop-blur-md transition-all duration-300 ${
+        <div style={{ 
+          borderRadius: 'var(--radius-card)',
+          boxShadow: 'var(--shadow-card-hover)'
+        }} className={`absolute z-10 w-full mt-2 border backdrop-blur-md transition-all duration-300 ${
           isDarkMode 
             ? 'bg-gray-800/95 border-gray-700' 
             : 'bg-white/95 border-gray-200'

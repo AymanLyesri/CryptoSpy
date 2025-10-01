@@ -48,10 +48,11 @@ export default function ApiStatusIndicator() {
       {/* Toggle button */}
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className={`mb-2 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+        style={{ borderRadius: 'var(--radius-button)' }}
+        className={`mb-2 px-3 py-1 text-xs font-medium transition-colors ${
           isNearLimit || hasBackoff
-            ? 'bg-yellow-500 text-yellow-900 hover:bg-yellow-600'
-            : 'bg-green-500 text-green-900 hover:bg-green-600'
+            ? 'status-warning hover:bg-yellow-600'
+            : 'status-success hover:bg-green-600'
         }`}
         title="Click to view API usage details"
       >
@@ -60,8 +61,13 @@ export default function ApiStatusIndicator() {
 
       {/* Stats panel */}
       {isVisible && (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 min-w-[200px]">
-          <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">
+        <div style={{ 
+          borderRadius: 'var(--radius-card)',
+          padding: 'var(--spacing-card)',
+          boxShadow: 'var(--shadow-card-hover)',
+          minWidth: '200px'
+        }} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700">
+          <h3 className="text-subheading mb-3">
             API Status
           </h3>
           

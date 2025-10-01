@@ -474,12 +474,16 @@ export default function CryptoPriceChart({
   };
 
   return (
-    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-3xl">
+    <div style={{ 
+      padding: 'var(--spacing-section)', 
+      borderRadius: 'var(--radius-card)',
+      boxShadow: 'var(--shadow-card)'
+    }} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h3 className="text-2xl font-light text-gray-900 dark:text-white">
+          <h3 className="text-heading">
             {cryptoName}{" "}
-            <span className="text-gray-500 dark:text-gray-400 text-lg">
+            <span className="text-muted text-lg">
               ({cryptoSymbol.toUpperCase()})
             </span>
           </h3>
@@ -509,17 +513,13 @@ export default function CryptoPriceChart({
           >
             {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Chart
           </div>
-          <div
-            className={`text-xs transition-colors duration-300 ${
-              isDarkMode ? "text-gray-500" : "text-gray-400"
-            }`}
-          >
+          <div className="text-muted">
             {validData.length} data points
           </div>
         </div>
       </div>
 
-      <div className="h-80 relative rounded-2xl overflow-hidden">
+      <div style={{ borderRadius: 'var(--radius-card)' }} className="h-80 relative overflow-hidden">
         {isMounted && chartReady ? (
           <Line
             ref={chartRef}
@@ -540,32 +540,44 @@ export default function CryptoPriceChart({
 
       {/* Chart Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">
+        <div style={{ 
+          padding: 'var(--spacing-card)', 
+          borderRadius: 'var(--radius-card)'
+        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
+          <div className="text-label mb-1 uppercase tracking-wider">
             High
           </div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(Math.max(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">
+        <div style={{ 
+          padding: 'var(--spacing-card)', 
+          borderRadius: 'var(--radius-card)'
+        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
+          <div className="text-label mb-1 uppercase tracking-wider">
             Low
           </div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(Math.min(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">
+        <div style={{ 
+          padding: 'var(--spacing-card)', 
+          borderRadius: 'var(--radius-card)'
+        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
+          <div className="text-label mb-1 uppercase tracking-wider">
             First
           </div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(validData[0]?.price || 0)}
           </div>
         </div>
-        <div className="text-center p-4 bg-gray-50/50 dark:bg-gray-700/30 rounded-2xl">
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 font-medium uppercase tracking-wider">
+        <div style={{ 
+          padding: 'var(--spacing-card)', 
+          borderRadius: 'var(--radius-card)'
+        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
+          <div className="text-label mb-1 uppercase tracking-wider">
             Latest
           </div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">

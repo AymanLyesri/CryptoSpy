@@ -50,7 +50,11 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="fixed top-4 right-4 z-50 group inline-flex items-center justify-center h-12 w-12 rounded-full border border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-700 shadow-lg backdrop-blur-sm transition-all duration-300 hover:scale-110 active:scale-95"
+      style={{ 
+        borderRadius: 'var(--radius-button)',
+        boxShadow: 'var(--shadow-card)'
+      }}
+      className="fixed top-4 right-4 z-50 group inline-flex items-center justify-center h-12 w-12 border border-gray-300 dark:border-gray-600 bg-white/80 dark:bg-gray-800/80 text-gray-800 dark:text-gray-100 hover:bg-white dark:hover:bg-gray-700 backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:shadow-[var(--shadow-card-hover)] active:scale-95"
     >
       <div className="relative w-6 h-6">
         {/* Sun icon */}

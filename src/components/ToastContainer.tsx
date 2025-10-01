@@ -12,7 +12,7 @@ export default function ToastContainer({ toasts, onRemove }: ToastContainerProps
   if (toasts.length === 0) return null;
 
   const getToastStyles = (type: Toast['type']) => {
-    const baseStyles = "px-6 py-4 rounded-2xl shadow-2xl border flex items-center space-x-4 min-w-96 max-w-md backdrop-blur-md transition-all duration-300";
+    const baseStyles = "flex items-center space-x-4 min-w-96 max-w-md backdrop-blur-md transition-all duration-300 border";
     
     switch (type) {
       case 'success':
@@ -60,6 +60,11 @@ export default function ToastContainer({ toasts, onRemove }: ToastContainerProps
       {toasts.map((toast) => (
         <div
           key={toast.id}
+          style={{ 
+            padding: 'var(--spacing-card)', 
+            borderRadius: 'var(--radius-card)',
+            boxShadow: 'var(--shadow-card-hover)'
+          }}
           className={`${getToastStyles(toast.type)} animate-in slide-in-from-right duration-300`}
         >
           {getIcon(toast.type)}

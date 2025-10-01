@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
-/* input.css */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* CSS Variables for consistent design tokens */
+:root {
+  /* Spacing tokens */
+  --spacing-card: 1.5rem; /* 24px - consistent card padding */
+  --spacing-section: 2rem; /* 32px - consistent section spacing */
+  
+  /* Border radius tokens */
+  --radius-card: 1rem; /* 16px - unified card radius */
+  --radius-button: 0.75rem; /* 12px - unified button radius */
+  --radius-input: 1rem; /* 16px - unified input radius */
+  
+  /* Light mode colors */
+  --bg-primary: rgb(249, 250, 251); /* gray-50 - main background */
+  --bg-secondary: rgb(255, 255, 255); /* white - card backgrounds */
+  
+  /* Shadow tokens */
+  --shadow-card: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 20px 40px -4px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+  /* Dark mode colors */
+  --bg-primary: rgb(17, 24, 39); /* gray-900 - main background */
+  --bg-secondary: rgb(31, 41, 55); /* gray-800 - card backgrounds */
+  
+  --shadow-card: 0 10px 25px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 20px 40px -4px rgba(0, 0, 0, 0.4), 0 8px 12px -2px rgba(0, 0, 0, 0.3);
+}
 
