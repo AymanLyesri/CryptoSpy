@@ -5,19 +5,16 @@ import dynamic from "next/dynamic";
 import { PriceDataPoint, TimeRange } from "../types/chartData";
 
 // Dynamically import Chart.js components to avoid SSR issues
-const Line = dynamic(
-  () => import("react-chartjs-2").then((mod) => mod.Line),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex items-center justify-center h-80">
-        <div className="animate-pulse text-gray-500 dark:text-gray-400">
-          Loading chart...
-        </div>
+const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-80">
+      <div className="animate-pulse text-gray-500 dark:text-gray-400">
+        Loading chart...
       </div>
-    )
-  }
-);
+    </div>
+  ),
+});
 
 // Dynamically register Chart.js components
 let ChartJS: any = null;
@@ -34,7 +31,7 @@ const registerChartComponents = async () => {
       Legend,
       Filler,
     } = await import("chart.js");
-    
+
     Chart.register(
       CategoryScale,
       LinearScale,
@@ -45,7 +42,7 @@ const registerChartComponents = async () => {
       Legend,
       Filler
     );
-    
+
     ChartJS = Chart;
   }
 };
@@ -79,9 +76,9 @@ export default function CryptoPriceChart({
         setChartReady(true);
       }
     };
-    
+
     initializeChart();
-    
+
     return () => {
       setIsMounted(false);
       setChartReady(false);
@@ -102,7 +99,7 @@ export default function CryptoPriceChart({
   // Detect theme changes - only run on client side
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     const checkTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
@@ -122,7 +119,13 @@ export default function CryptoPriceChart({
 
   // Optimized chart update effect (moved to top to fix hooks order)
   useEffect(() => {
-    if (!isMounted || !chartReady || !chartRef.current || !data || data.length === 0) {
+    if (
+      !isMounted ||
+      !chartReady ||
+      !chartRef.current ||
+      !data ||
+      data.length === 0
+    ) {
       return;
     }
 
@@ -474,25 +477,28 @@ export default function CryptoPriceChart({
   };
 
   return (
-    <div style={{ 
-      padding: 'var(--spacing-section)', 
-      borderRadius: 'var(--radius-card)',
-      boxShadow: 'var(--shadow-card)'
-    }} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]">
-      <div className="flex items-center justify-between mb-8">
-        <div>
+    <div
+      style={{
+        padding: "var(--spacing-section)",
+        borderRadius: "var(--radius-card)",
+        boxShadow: "var(--shadow-card)",
+      }}
+      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
+        <div className="text-center sm:text-left">
           <h3 className="text-heading">
             {cryptoName}{" "}
             <span className="text-muted text-lg">
               ({cryptoSymbol.toUpperCase()})
             </span>
           </h3>
-          <div className="flex items-center space-x-4 mt-3">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-center sm:justify-start space-x-4 mt-3">
+            <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               {formatPrice(currentPrice)}
             </span>
             <span
-              className={`text-lg font-medium px-3 py-1 rounded-full transition-all duration-300 ${
+              className={`text-sm sm:text-lg font-medium px-3 py-1 rounded-full transition-all duration-300 ${
                 isPositiveChange
                   ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30"
                   : "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30"
@@ -503,7 +509,7 @@ export default function CryptoPriceChart({
             </span>
           </div>
         </div>
-        <div className="text-right">
+        <div className="text-center sm:text-right">
           <div
             className={`text-sm font-medium mb-1 px-3 py-1 rounded-full transition-colors duration-300 ${
               isDarkMode
@@ -513,13 +519,14 @@ export default function CryptoPriceChart({
           >
             {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Chart
           </div>
-          <div className="text-muted">
-            {validData.length} data points
-          </div>
+          <div className="text-muted">{validData.length} data points</div>
         </div>
       </div>
 
-      <div style={{ borderRadius: 'var(--radius-card)' }} className="h-80 relative overflow-hidden">
+      <div
+        style={{ borderRadius: "var(--radius-card)" }}
+        className="h-80 relative overflow-hidden"
+      >
         {isMounted && chartReady ? (
           <Line
             ref={chartRef}
@@ -540,46 +547,50 @@ export default function CryptoPriceChart({
 
       {/* Chart Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div style={{ 
-          padding: 'var(--spacing-card)', 
-          borderRadius: 'var(--radius-card)'
-        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
-          <div className="text-label mb-1 uppercase tracking-wider">
-            High
-          </div>
+        <div
+          style={{
+            padding: "var(--spacing-card)",
+            borderRadius: "var(--radius-card)",
+          }}
+          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
+        >
+          <div className="text-label mb-1 uppercase tracking-wider">High</div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(Math.max(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div style={{ 
-          padding: 'var(--spacing-card)', 
-          borderRadius: 'var(--radius-card)'
-        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
-          <div className="text-label mb-1 uppercase tracking-wider">
-            Low
-          </div>
+        <div
+          style={{
+            padding: "var(--spacing-card)",
+            borderRadius: "var(--radius-card)",
+          }}
+          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
+        >
+          <div className="text-label mb-1 uppercase tracking-wider">Low</div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(Math.min(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div style={{ 
-          padding: 'var(--spacing-card)', 
-          borderRadius: 'var(--radius-card)'
-        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
-          <div className="text-label mb-1 uppercase tracking-wider">
-            First
-          </div>
+        <div
+          style={{
+            padding: "var(--spacing-card)",
+            borderRadius: "var(--radius-card)",
+          }}
+          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
+        >
+          <div className="text-label mb-1 uppercase tracking-wider">First</div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(validData[0]?.price || 0)}
           </div>
         </div>
-        <div style={{ 
-          padding: 'var(--spacing-card)', 
-          borderRadius: 'var(--radius-card)'
-        }} className="text-center bg-gray-50/50 dark:bg-gray-700/30">
-          <div className="text-label mb-1 uppercase tracking-wider">
-            Latest
-          </div>
+        <div
+          style={{
+            padding: "var(--spacing-card)",
+            borderRadius: "var(--radius-card)",
+          }}
+          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
+        >
+          <div className="text-label mb-1 uppercase tracking-wider">Latest</div>
           <div className="text-lg font-bold text-gray-900 dark:text-white">
             {formatPrice(validData[validData.length - 1]?.price || 0)}
           </div>

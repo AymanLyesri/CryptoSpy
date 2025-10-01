@@ -18,7 +18,7 @@ class MemoryCache {
   set<T>(key: string, data: T, ttlMs: number = 5 * 60 * 1000): void {
     // Cleanup expired items before adding new ones
     this.cleanup();
-    
+
     // If at max capacity, remove least recently used items
     if (this.cache.size >= this.maxSize) {
       this.evictLRU();
@@ -46,7 +46,7 @@ class MemoryCache {
     // Update access stats
     item.accessCount++;
     item.lastAccessed = now;
-    
+
     return item.data;
   }
 
@@ -61,27 +61,27 @@ class MemoryCache {
   private cleanup(): void {
     const now = Date.now();
     const keysToDelete: string[] = [];
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (now - item.timestamp > item.ttl) {
         keysToDelete.push(key);
       }
     }
-    
-    keysToDelete.forEach(key => this.cache.delete(key));
+
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   private evictLRU(): void {
-    let oldestKey = '';
+    let oldestKey = "";
     let oldestTime = Date.now();
-    
+
     for (const [key, item] of this.cache.entries()) {
       if (item.lastAccessed < oldestTime) {
         oldestTime = item.lastAccessed;
         oldestKey = key;
       }
     }
-    
+
     if (oldestKey) {
       this.cache.delete(oldestKey);
     }
@@ -101,7 +101,8 @@ class RateLimiter {
   private maxBackoff: number = 30000; // 30 seconds max backoff
   private pendingRequests = new Map<string, Promise<any>>();
 
-  constructor(maxRequests: number = 6, windowMs: number = 60000) { // Conservative limit
+  constructor(maxRequests: number = 6, windowMs: number = 60000) {
+    // Conservative limit
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
@@ -109,8 +110,8 @@ class RateLimiter {
   async canMakeRequest(): Promise<boolean> {
     const now = Date.now();
     // Remove requests outside the current window
-    this.requests = this.requests.filter(time => now - time < this.windowMs);
-    
+    this.requests = this.requests.filter((time) => now - time < this.windowMs);
+
     return this.requests.length < this.maxRequests;
   }
 
@@ -122,24 +123,34 @@ class RateLimiter {
 
   recordFailure(): void {
     // Increase backoff for future requests
-    this.backoffMultiplier = Math.min(this.backoffMultiplier * 2, this.maxBackoff / 1000);
+    this.backoffMultiplier = Math.min(
+      this.backoffMultiplier * 2,
+      this.maxBackoff / 1000
+    );
   }
 
   async waitForNextSlot(): Promise<void> {
     if (this.requests.length === 0) return;
-    
+
     const oldestRequest = Math.min(...this.requests);
     const baseWaitTime = this.windowMs - (Date.now() - oldestRequest);
     const waitTime = Math.max(baseWaitTime, 1000 * this.backoffMultiplier);
-    
+
     if (waitTime > 0) {
-      console.log(`Rate limit hit, waiting ${Math.round(waitTime / 1000)}s before next request`);
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      console.log(
+        `Rate limit hit, waiting ${Math.round(
+          waitTime / 1000
+        )}s before next request`
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
   }
 
   // Request deduplication - prevent multiple identical requests
-  async deduplicateRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
+  async deduplicateRequest<T>(
+    key: string,
+    requestFn: () => Promise<T>
+  ): Promise<T> {
     if (this.pendingRequests.has(key)) {
       console.log(`Deduplicating request: ${key}`);
       return this.pendingRequests.get(key) as Promise<T>;
@@ -153,21 +164,48 @@ class RateLimiter {
     return promise;
   }
 
-  getStats(): { requestsInWindow: number; maxRequests: number; backoffMultiplier: number } {
+  getStats(): {
+    requestsInWindow: number;
+    maxRequests: number;
+    backoffMultiplier: number;
+    nextAvailableTime?: number;
+  } {
     const now = Date.now();
-    const requestsInWindow = this.requests.filter(time => now - time < this.windowMs).length;
-    return { requestsInWindow, maxRequests: this.maxRequests, backoffMultiplier: this.backoffMultiplier };
+    const requestsInWindow = this.requests.filter(
+      (time) => now - time < this.windowMs
+    ).length;
+
+    let nextAvailableTime: number | undefined;
+    if (this.requests.length >= this.maxRequests) {
+      // Find the oldest request and calculate when it will expire from the window
+      const oldestRequest = Math.min(...this.requests);
+      nextAvailableTime = oldestRequest + this.windowMs;
+    }
+
+    return {
+      requestsInWindow,
+      maxRequests: this.maxRequests,
+      backoffMultiplier: this.backoffMultiplier,
+      nextAvailableTime,
+    };
   }
 }
 
 // Smart cache TTL based on data type
-export const getCacheTTL = (dataType: 'market' | 'search' | 'historical' | 'price'): number => {
+export const getCacheTTL = (
+  dataType: "market" | "search" | "historical" | "price"
+): number => {
   switch (dataType) {
-    case 'market': return 2 * 60 * 1000; // 2 minutes for market data
-    case 'search': return 30 * 60 * 1000; // 30 minutes for search results
-    case 'historical': return 60 * 60 * 1000; // 1 hour for historical data
-    case 'price': return 30 * 1000; // 30 seconds for current price
-    default: return 5 * 60 * 1000; // 5 minutes default
+    case "market":
+      return 2 * 60 * 1000; // 2 minutes for market data
+    case "search":
+      return 30 * 60 * 1000; // 30 minutes for search results
+    case "historical":
+      return 60 * 60 * 1000; // 1 hour for historical data
+    case "price":
+      return 30 * 1000; // 30 seconds for current price
+    default:
+      return 5 * 60 * 1000; // 5 minutes default
   }
 };
 

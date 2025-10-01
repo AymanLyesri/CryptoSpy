@@ -12,9 +12,40 @@ interface CoinGeckoMarketData {
   image: string;
   current_price: number;
   market_cap: number;
-  price_change_percentage_24h: number;
   market_cap_rank?: number;
-  total_volume?: number;
+  fully_diluted_valuation?: number;
+  total_volume: number;
+  high_24h?: number;
+  low_24h?: number;
+  price_change_24h?: number;
+  price_change_percentage_24h: number;
+  price_change_percentage_7d?: number;
+  price_change_percentage_30d?: number;
+  price_change_percentage_200d?: number;
+  price_change_percentage_1y?: number;
+  market_cap_change_24h?: number;
+  market_cap_change_percentage_24h?: number;
+  circulating_supply?: number;
+  total_supply?: number;
+  max_supply?: number;
+  ath?: number;
+  ath_change_percentage?: number;
+  ath_date?: string;
+  atl?: number;
+  atl_change_percentage?: number;
+  atl_date?: string;
+  roi?: {
+    times: number;
+    currency: string;
+    percentage: number;
+  };
+  last_updated?: string;
+  sparkline_in_7d?: {
+    price: number[];
+  };
+  price_change_percentage_1h_in_currency?: number;
+  price_change_percentage_24h_in_currency?: number;
+  price_change_percentage_7d_in_currency?: number;
 }
 
 interface CoinGeckoHistoricalData {
@@ -65,13 +96,14 @@ export class CoinGeckoService {
           try {
             // Use our internal API route instead of direct CoinGecko calls
             // Handle both production and development environments
-            const baseUrl = typeof window !== 'undefined' 
-              ? window.location.origin 
-              : process.env.VERCEL_URL 
-                ? `https://${process.env.VERCEL_URL}` 
-                : process.env.NEXT_PUBLIC_APP_URL 
-                  ? process.env.NEXT_PUBLIC_APP_URL
-                  : 'http://localhost:3000';
+            const baseUrl =
+              typeof window !== "undefined"
+                ? window.location.origin
+                : process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}`
+                : process.env.NEXT_PUBLIC_APP_URL
+                ? process.env.NEXT_PUBLIC_APP_URL
+                : "http://localhost:3000";
 
             const apiUrl = url.startsWith(COINGECKO_BASE_URL)
               ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
@@ -117,7 +149,7 @@ export class CoinGeckoService {
             const data = await response.json();
 
             // Validate data structure before caching
-            if (data && typeof data === 'object') {
+            if (data && typeof data === "object") {
               // Cache the successful response
               if (cacheKey) {
                 const ttl = getCacheTTL(cacheType);
@@ -141,7 +173,10 @@ export class CoinGeckoService {
             lastError.message.includes("ENOTFOUND") ||
             lastError.message.includes("timeout")
           ) {
-            console.warn(`Network error on attempt ${attempt + 1}:`, lastError.message);
+            console.warn(
+              `Network error on attempt ${attempt + 1}:`,
+              lastError.message
+            );
           }
 
           // Special handling for 401 errors - try without API key
@@ -151,13 +186,14 @@ export class CoinGeckoService {
           ) {
             try {
               console.log("Retrying request without API key...");
-              const baseUrl = typeof window !== 'undefined' 
-                ? window.location.origin 
-                : process.env.VERCEL_URL 
-                  ? `https://${process.env.VERCEL_URL}` 
-                  : process.env.NEXT_PUBLIC_APP_URL 
-                    ? process.env.NEXT_PUBLIC_APP_URL
-                    : 'http://localhost:3000';
+              const baseUrl =
+                typeof window !== "undefined"
+                  ? window.location.origin
+                  : process.env.VERCEL_URL
+                  ? `https://${process.env.VERCEL_URL}`
+                  : process.env.NEXT_PUBLIC_APP_URL
+                  ? process.env.NEXT_PUBLIC_APP_URL
+                  : "http://localhost:3000";
 
               const fallbackApiUrl = url.startsWith(COINGECKO_BASE_URL)
                 ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
@@ -177,7 +213,7 @@ export class CoinGeckoService {
                 rateLimiter.recordRequest();
                 const data = await fallbackResponse.json();
 
-                if (cacheKey && data && typeof data === 'object') {
+                if (cacheKey && data && typeof data === "object") {
                   const ttl = getCacheTTL(cacheType);
                   apiCache.set(cacheKey, data, ttl);
                 }
@@ -219,7 +255,7 @@ export class CoinGeckoService {
 
     try {
       const data: CoinGeckoMarketData[] = await this.fetchWithRateLimit(
-        `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${normalizedLimit}&page=1&sparkline=false&price_change_percentage=24h`,
+        `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${normalizedLimit}&page=1&sparkline=true&price_change_percentage=1h,24h,7d,30d,200d,1y`,
         cacheKey,
         { cacheType: "market", timeout: 15000 }
       );
@@ -230,7 +266,37 @@ export class CoinGeckoService {
         symbol: coin.symbol.toUpperCase(),
         current_price: coin.current_price,
         market_cap: coin.market_cap,
+        market_cap_rank: coin.market_cap_rank,
+        fully_diluted_valuation: coin.fully_diluted_valuation,
+        total_volume: coin.total_volume,
+        high_24h: coin.high_24h,
+        low_24h: coin.low_24h,
+        price_change_24h: coin.price_change_24h,
         price_change_percentage_24h: coin.price_change_percentage_24h,
+        price_change_percentage_7d: coin.price_change_percentage_7d,
+        price_change_percentage_30d: coin.price_change_percentage_30d,
+        price_change_percentage_200d: coin.price_change_percentage_200d,
+        price_change_percentage_1y: coin.price_change_percentage_1y,
+        market_cap_change_24h: coin.market_cap_change_24h,
+        market_cap_change_percentage_24h: coin.market_cap_change_percentage_24h,
+        circulating_supply: coin.circulating_supply,
+        total_supply: coin.total_supply,
+        max_supply: coin.max_supply,
+        ath: coin.ath,
+        ath_change_percentage: coin.ath_change_percentage,
+        ath_date: coin.ath_date,
+        atl: coin.atl,
+        atl_change_percentage: coin.atl_change_percentage,
+        atl_date: coin.atl_date,
+        roi: coin.roi,
+        last_updated: coin.last_updated,
+        sparkline_in_7d: coin.sparkline_in_7d,
+        price_change_percentage_1h_in_currency:
+          coin.price_change_percentage_1h_in_currency,
+        price_change_percentage_24h_in_currency:
+          coin.price_change_percentage_24h_in_currency,
+        price_change_percentage_7d_in_currency:
+          coin.price_change_percentage_7d_in_currency,
         image: coin.image,
       }));
 
@@ -247,7 +313,38 @@ export class CoinGeckoService {
           symbol: coin.symbol.toUpperCase(),
           current_price: coin.current_price,
           market_cap: coin.market_cap,
+          market_cap_rank: coin.market_cap_rank,
+          fully_diluted_valuation: coin.fully_diluted_valuation,
+          total_volume: coin.total_volume,
+          high_24h: coin.high_24h,
+          low_24h: coin.low_24h,
+          price_change_24h: coin.price_change_24h,
           price_change_percentage_24h: coin.price_change_percentage_24h,
+          price_change_percentage_7d: coin.price_change_percentage_7d,
+          price_change_percentage_30d: coin.price_change_percentage_30d,
+          price_change_percentage_200d: coin.price_change_percentage_200d,
+          price_change_percentage_1y: coin.price_change_percentage_1y,
+          market_cap_change_24h: coin.market_cap_change_24h,
+          market_cap_change_percentage_24h:
+            coin.market_cap_change_percentage_24h,
+          circulating_supply: coin.circulating_supply,
+          total_supply: coin.total_supply,
+          max_supply: coin.max_supply,
+          ath: coin.ath,
+          ath_change_percentage: coin.ath_change_percentage,
+          ath_date: coin.ath_date,
+          atl: coin.atl,
+          atl_change_percentage: coin.atl_change_percentage,
+          atl_date: coin.atl_date,
+          roi: coin.roi,
+          last_updated: coin.last_updated,
+          sparkline_in_7d: coin.sparkline_in_7d,
+          price_change_percentage_1h_in_currency:
+            coin.price_change_percentage_1h_in_currency,
+          price_change_percentage_24h_in_currency:
+            coin.price_change_percentage_24h_in_currency,
+          price_change_percentage_7d_in_currency:
+            coin.price_change_percentage_7d_in_currency,
           image: coin.image,
         }));
       }
@@ -284,7 +381,7 @@ export class CoinGeckoService {
       const marketData: CoinGeckoMarketData[] = await this.fetchWithRateLimit(
         `${COINGECKO_BASE_URL}/coins/markets?vs_currency=usd&ids=${coinIds.join(
           ","
-        )}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`,
+        )}&order=market_cap_desc&sparkline=true&price_change_percentage=1h,24h,7d,30d,200d,1y`,
         marketCacheKey,
         { cacheType: "market", timeout: 12000 }
       );
@@ -295,7 +392,37 @@ export class CoinGeckoService {
         symbol: coin.symbol.toUpperCase(),
         current_price: coin.current_price,
         market_cap: coin.market_cap,
+        market_cap_rank: coin.market_cap_rank,
+        fully_diluted_valuation: coin.fully_diluted_valuation,
+        total_volume: coin.total_volume,
+        high_24h: coin.high_24h,
+        low_24h: coin.low_24h,
+        price_change_24h: coin.price_change_24h,
         price_change_percentage_24h: coin.price_change_percentage_24h,
+        price_change_percentage_7d: coin.price_change_percentage_7d,
+        price_change_percentage_30d: coin.price_change_percentage_30d,
+        price_change_percentage_200d: coin.price_change_percentage_200d,
+        price_change_percentage_1y: coin.price_change_percentage_1y,
+        market_cap_change_24h: coin.market_cap_change_24h,
+        market_cap_change_percentage_24h: coin.market_cap_change_percentage_24h,
+        circulating_supply: coin.circulating_supply,
+        total_supply: coin.total_supply,
+        max_supply: coin.max_supply,
+        ath: coin.ath,
+        ath_change_percentage: coin.ath_change_percentage,
+        ath_date: coin.ath_date,
+        atl: coin.atl,
+        atl_change_percentage: coin.atl_change_percentage,
+        atl_date: coin.atl_date,
+        roi: coin.roi,
+        last_updated: coin.last_updated,
+        sparkline_in_7d: coin.sparkline_in_7d,
+        price_change_percentage_1h_in_currency:
+          coin.price_change_percentage_1h_in_currency,
+        price_change_percentage_24h_in_currency:
+          coin.price_change_percentage_24h_in_currency,
+        price_change_percentage_7d_in_currency:
+          coin.price_change_percentage_7d_in_currency,
         image: coin.image,
       }));
     } catch (error) {

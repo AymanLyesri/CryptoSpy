@@ -11,6 +11,7 @@ import { TimeRange } from "../types/chartData";
 import { useCryptoData } from "../hooks/useCryptoData";
 import { useToast } from "../hooks/useToast";
 import ThemeToggle from "@/components/ThemeToggle";
+import ApiStatusIndicator from "../components/ApiStatusIndicator";
 
 export default function Home() {
   const [selectedCrypto, setSelectedCrypto] = useState<Cryptocurrency | null>(
@@ -99,7 +100,7 @@ export default function Home() {
       )}
 
       <div
-        className={`max-w-4xl mx-auto transition-all duration-300 ${
+        className={`max-w-7xl mx-auto transition-all duration-300 ${
           showStickySearch ? "pt-16" : ""
         }`}
       >
@@ -156,71 +157,77 @@ export default function Home() {
 
         {/* Selected Crypto Display */}
         {selectedCrypto && (
-          <div className="space-y-6">
-            {/* Crypto Info Card */}
-            <CoinInfo crypto={selectedCrypto} />
-
-            {/* Chart Controls */}
-            <div className="flex justify-center">
-              <TimeRangeSelector
-                selectedRange={selectedTimeRange}
-                onRangeChange={handleTimeRangeChange}
-              />
+          <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-4 gap-6">
+            {/* Left Sidebar - Crypto Info */}
+            <div className="lg:col-span-1 xl:col-span-1 order-2 lg:order-1">
+              <CoinInfo crypto={selectedCrypto} />
             </div>
 
-            {/* Price Chart */}
-            {selectedCrypto && (
-              <div className="relative">
-                {isLoadingHistory && (
-                  <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
-                    <div className="text-center py-12">
-                      <div className="animate-pulse">
-                        <div className="text-gray-600 dark:text-gray-300 text-lg mb-4">
-                          Loading {selectedCrypto.name} price chart...
-                        </div>
-                        <div className="w-12 h-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <div className="text-gray-500 dark:text-gray-400 text-sm">
-                          Fetching historical data
+            {/* Middle Section - Chart and Controls */}
+            <div className="lg:col-span-3 xl:col-span-3 order-1 lg:order-2 space-y-6">
+              {/* Chart Controls */}
+              <div className="flex justify-center lg:justify-start">
+                <TimeRangeSelector
+                  selectedRange={selectedTimeRange}
+                  onRangeChange={handleTimeRangeChange}
+                />
+              </div>
+
+              {/* Price Chart */}
+              {selectedCrypto && (
+                <div className="relative">
+                  {isLoadingHistory && (
+                    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+                      <div className="text-center py-12">
+                        <div className="animate-pulse">
+                          <div className="text-gray-600 dark:text-gray-300 text-lg mb-4">
+                            Loading {selectedCrypto.name} price chart...
+                          </div>
+                          <div className="w-12 h-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="text-gray-500 dark:text-gray-400 text-sm">
+                            Fetching historical data
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {historyError && !isLoadingHistory && (
-                  <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
-                    <div className="text-red-600 dark:text-red-400 font-medium">
-                      Failed to load price data
-                    </div>
-                    <div className="text-red-500 dark:text-red-400 text-sm mt-1">
-                      {historyError}
-                    </div>
-                    <button
-                      onClick={() => loadPriceHistory(selectedCrypto.id)}
-                      className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-
-                {priceHistory &&
-                  priceHistory.cryptoId === selectedCrypto.id &&
-                  !isLoadingHistory && (
-                    <CryptoPriceChart
-                      key={`${selectedCrypto.id}-${selectedTimeRange}`}
-                      data={priceHistory[selectedTimeRange] || []}
-                      timeRange={selectedTimeRange}
-                      cryptoName={selectedCrypto.name}
-                      cryptoSymbol={selectedCrypto.symbol}
-                      currentPrice={selectedCrypto.current_price}
-                    />
                   )}
-              </div>
-            )}
+
+                  {historyError && !isLoadingHistory && (
+                    <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
+                      <div className="text-red-600 dark:text-red-400 font-medium">
+                        Failed to load price data
+                      </div>
+                      <div className="text-red-500 dark:text-red-400 text-sm mt-1">
+                        {historyError}
+                      </div>
+                      <button
+                        onClick={() => loadPriceHistory(selectedCrypto.id)}
+                        className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {priceHistory &&
+                    priceHistory.cryptoId === selectedCrypto.id &&
+                    !isLoadingHistory && (
+                      <CryptoPriceChart
+                        key={`${selectedCrypto.id}-${selectedTimeRange}`}
+                        data={priceHistory[selectedTimeRange] || []}
+                        timeRange={selectedTimeRange}
+                        cryptoName={selectedCrypto.name}
+                        cryptoSymbol={selectedCrypto.symbol}
+                        currentPrice={selectedCrypto.current_price}
+                      />
+                    )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
+      <ApiStatusIndicator />
     </div>
   );
 }
