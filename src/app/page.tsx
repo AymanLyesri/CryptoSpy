@@ -5,6 +5,7 @@ import CryptoSearch from "../components/CryptoSearch";
 import CryptoPriceChart from "../components/CryptoPriceChart";
 import TimeRangeSelector from "../components/TimeRangeSelector";
 import ToastContainer from "../components/ToastContainer";
+import CoinInfo from "../components/CoinInfo";
 import { Cryptocurrency } from "../types/crypto";
 import { TimeRange } from "../types/chartData";
 import { useCryptoData } from "../hooks/useCryptoData";
@@ -17,6 +18,7 @@ export default function Home() {
   );
   const [selectedTimeRange, setSelectedTimeRange] =
     useState<TimeRange>("daily");
+  const [showStickySearch, setShowStickySearch] = useState(false);
 
   const {
     priceHistory,
@@ -28,6 +30,18 @@ export default function Home() {
   } = useCryptoData();
 
   const { toasts, showToast, removeToast } = useToast();
+
+  // Handle sticky search bar visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show sticky search when scrolled past 200px for a more seamless transition
+      const scrollY = window.scrollY;
+      setShowStickySearch(scrollY > 200);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Show toast when using fallback data
   useEffect(() => {
@@ -61,43 +75,34 @@ export default function Home() {
     setSelectedTimeRange(range);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: price < 1 ? 4 : 2,
-    }).format(price);
-  };
-
-  const formatMarketCap = (marketCap: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(marketCap);
-  };
-
-  const formatPercentage = (percentage: number) => {
-    const isPositive = percentage > 0;
-    return (
-      <span
-        className={`font-semibold ${
-          isPositive ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        {isPositive ? "+" : ""}
-        {percentage.toFixed(2)}%
-      </span>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <ThemeToggle />
-      <div className="max-w-4xl mx-auto">
+
+      {/* Sticky Search Bar */}
+      {showStickySearch && (
+        <div
+          style={{
+            boxShadow: "var(--shadow-card-hover)",
+          }}
+          className="fixed top-0 left-0 right-0 z-30 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 py-2 px-4 sm:px-6 lg:px-8 transition-all duration-300 ease-out"
+        >
+          <div className="max-w-lg mx-auto">
+            <CryptoSearch
+              onSelect={handleCryptoSelect}
+              placeholder="Search..."
+              compact={true}
+            />
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`max-w-4xl mx-auto transition-all duration-300 ${
+          showStickySearch ? "pt-16" : ""
+        }`}
+      >
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             Crypto Spy 🕵️
@@ -153,64 +158,7 @@ export default function Home() {
         {selectedCrypto && (
           <div className="space-y-6">
             {/* Crypto Info Card */}
-            <div
-              style={{
-                padding: "var(--spacing-card)",
-                borderRadius: "var(--radius-card)",
-                boxShadow: "var(--shadow-card)",
-              }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <h2 className="text-heading">{selectedCrypto.name}</h2>
-                    <p className="text-muted uppercase font-medium">
-                      {selectedCrypto.symbol}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {formatPrice(selectedCrypto.current_price)}
-                  </div>
-                  <div className="text-lg">
-                    {formatPercentage(
-                      selectedCrypto.price_change_percentage_24h
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div
-                  style={{
-                    padding: "var(--spacing-card)",
-                    borderRadius: "var(--radius-card)",
-                  }}
-                  className="bg-gray-50 dark:bg-gray-700"
-                >
-                  <h3 className="text-label mb-1">Market Cap</h3>
-                  <p className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {formatMarketCap(selectedCrypto.market_cap)}
-                  </p>
-                </div>
-                <div
-                  style={{
-                    padding: "var(--spacing-card)",
-                    borderRadius: "var(--radius-card)",
-                  }}
-                  className="bg-gray-50 dark:bg-gray-700"
-                >
-                  <h3 className="text-label mb-1">24h Change</h3>
-                  <p className="text-xl font-semibold">
-                    {formatPercentage(
-                      selectedCrypto.price_change_percentage_24h
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <CoinInfo crypto={selectedCrypto} />
 
             {/* Chart Controls */}
             <div className="flex justify-center">
