@@ -1,31 +1,54 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
+import dynamic from "next/dynamic";
 import { PriceDataPoint, TimeRange } from "../types/chartData";
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
+// Dynamically import Chart.js components to avoid SSR issues
+const Line = dynamic(
+  () => import("react-chartjs-2").then((mod) => mod.Line),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-80">
+        <div className="animate-pulse text-gray-500 dark:text-gray-400">
+          Loading chart...
+        </div>
+      </div>
+    )
+  }
 );
+
+// Dynamically register Chart.js components
+let ChartJS: any = null;
+const registerChartComponents = async () => {
+  if (typeof window !== "undefined" && !ChartJS) {
+    const {
+      Chart,
+      CategoryScale,
+      LinearScale,
+      PointElement,
+      LineElement,
+      Title,
+      Tooltip,
+      Legend,
+      Filler,
+    } = await import("chart.js");
+    
+    Chart.register(
+      CategoryScale,
+      LinearScale,
+      PointElement,
+      LineElement,
+      Title,
+      Tooltip,
+      Legend,
+      Filler
+    );
+    
+    ChartJS = Chart;
+  }
+};
 
 interface CryptoPriceChartProps {
   data: PriceDataPoint[];
@@ -42,29 +65,44 @@ export default function CryptoPriceChart({
   cryptoSymbol,
   currentPrice,
 }: CryptoPriceChartProps) {
-  const chartRef = useRef<ChartJS<"line">>(null);
+  const chartRef = useRef<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
 
-  // Handle component mounting
+  // Handle component mounting and Chart.js registration
   useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
+    const initializeChart = async () => {
+      if (typeof window !== "undefined") {
+        await registerChartComponents();
+        setIsMounted(true);
+        setChartReady(true);
+      }
+    };
+    
+    initializeChart();
+    
+    return () => {
+      setIsMounted(false);
+      setChartReady(false);
+    };
   }, []);
 
   // Force chart re-render when timeRange changes
   useEffect(() => {
-    if (isMounted && chartRef.current) {
+    if (isMounted && chartReady && chartRef.current) {
       try {
         chartRef.current.destroy();
       } catch (error) {
         console.warn("Chart destroy error:", error);
       }
     }
-  }, [timeRange, isMounted]);
+  }, [timeRange, isMounted, chartReady]);
 
-  // Detect theme changes
+  // Detect theme changes - only run on client side
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    
     const checkTheme = () => {
       const isDark = document.documentElement.classList.contains("dark");
       setIsDarkMode(isDark);
@@ -80,11 +118,11 @@ export default function CryptoPriceChart({
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [isMounted]);
 
   // Optimized chart update effect (moved to top to fix hooks order)
   useEffect(() => {
-    if (!isMounted || !chartRef.current || !data || data.length === 0) {
+    if (!isMounted || !chartReady || !chartRef.current || !data || data.length === 0) {
       return;
     }
 
@@ -166,10 +204,10 @@ export default function CryptoPriceChart({
         : colors.negativeLight;
       chart.update("none"); // Use 'none' for faster updates
     }
-  }, [data, timeRange, isMounted, isDarkMode]);
+  }, [data, timeRange, isMounted, chartReady, isDarkMode]);
 
-  // Early return if not mounted (prevents SSR issues)
-  if (!isMounted) {
+  // Early return if not mounted or chart not ready (prevents SSR issues)
+  if (!isMounted || !chartReady) {
     return (
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
         <div className="text-center py-12">
@@ -482,7 +520,7 @@ export default function CryptoPriceChart({
       </div>
 
       <div className="h-80 relative rounded-2xl overflow-hidden">
-        {isMounted ? (
+        {isMounted && chartReady ? (
           <Line
             ref={chartRef}
             data={chartData}

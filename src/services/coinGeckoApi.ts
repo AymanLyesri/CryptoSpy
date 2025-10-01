@@ -64,17 +64,30 @@ export class CoinGeckoService {
 
           try {
             // Use our internal API route instead of direct CoinGecko calls
+            // Handle both production and development environments
+            const baseUrl = typeof window !== 'undefined' 
+              ? window.location.origin 
+              : process.env.VERCEL_URL 
+                ? `https://${process.env.VERCEL_URL}` 
+                : process.env.NEXT_PUBLIC_APP_URL 
+                  ? process.env.NEXT_PUBLIC_APP_URL
+                  : 'http://localhost:3000';
+
             const apiUrl = url.startsWith(COINGECKO_BASE_URL)
-              ? `/api/coingecko?endpoint=${encodeURIComponent(
+              ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
                   url.replace(COINGECKO_BASE_URL + "/", "")
                 )}`
               : url;
+
+            console.log(`Making request to: ${apiUrl}`);
 
             const response = await fetch(apiUrl, {
               signal: controller.signal,
               headers: {
                 Accept: "application/json",
                 "Content-Type": "application/json",
+                // Add user agent for Vercel
+                "User-Agent": "CryptoSpy/1.0 (Vercel)",
               },
             });
 
@@ -103,11 +116,14 @@ export class CoinGeckoService {
 
             const data = await response.json();
 
-            // Cache the successful response
-            if (cacheKey) {
-              const ttl = getCacheTTL(cacheType);
-              apiCache.set(cacheKey, data, ttl);
-              console.log(`Cached ${cacheKey} for ${ttl / 1000}s`);
+            // Validate data structure before caching
+            if (data && typeof data === 'object') {
+              // Cache the successful response
+              if (cacheKey) {
+                const ttl = getCacheTTL(cacheType);
+                apiCache.set(cacheKey, data, ttl);
+                console.log(`Cached ${cacheKey} for ${ttl / 1000}s`);
+              }
             }
 
             return data;
@@ -119,6 +135,15 @@ export class CoinGeckoService {
           lastError =
             error instanceof Error ? error : new Error("Unknown error");
 
+          // Special handling for network errors on Vercel
+          if (
+            lastError.message.includes("network") ||
+            lastError.message.includes("ENOTFOUND") ||
+            lastError.message.includes("timeout")
+          ) {
+            console.warn(`Network error on attempt ${attempt + 1}:`, lastError.message);
+          }
+
           // Special handling for 401 errors - try without API key
           if (
             lastError.message.includes("Authentication failed") &&
@@ -126,8 +151,16 @@ export class CoinGeckoService {
           ) {
             try {
               console.log("Retrying request without API key...");
+              const baseUrl = typeof window !== 'undefined' 
+                ? window.location.origin 
+                : process.env.VERCEL_URL 
+                  ? `https://${process.env.VERCEL_URL}` 
+                  : process.env.NEXT_PUBLIC_APP_URL 
+                    ? process.env.NEXT_PUBLIC_APP_URL
+                    : 'http://localhost:3000';
+
               const fallbackApiUrl = url.startsWith(COINGECKO_BASE_URL)
-                ? `/api/coingecko?endpoint=${encodeURIComponent(
+                ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
                     url.replace(COINGECKO_BASE_URL + "/", "")
                   )}`
                 : url;
@@ -136,6 +169,7 @@ export class CoinGeckoService {
                 headers: {
                   accept: "application/json",
                   "Content-Type": "application/json",
+                  "User-Agent": "CryptoSpy/1.0 (Vercel-Fallback)",
                 },
               });
 
@@ -143,7 +177,7 @@ export class CoinGeckoService {
                 rateLimiter.recordRequest();
                 const data = await fallbackResponse.json();
 
-                if (cacheKey) {
+                if (cacheKey && data && typeof data === 'object') {
                   const ttl = getCacheTTL(cacheType);
                   apiCache.set(cacheKey, data, ttl);
                 }
