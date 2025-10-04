@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PriceDataPoint, TimeRange } from "../types/chartData";
+import ChartWrapper from "./ChartWrapper";
 
 // Dynamically import Chart.js components to avoid SSR issues
 const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
@@ -20,30 +21,38 @@ const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
 let ChartJS: any = null;
 const registerChartComponents = async () => {
   if (typeof window !== "undefined" && !ChartJS) {
-    const {
-      Chart,
-      CategoryScale,
-      LinearScale,
-      PointElement,
-      LineElement,
-      Title,
-      Tooltip,
-      Legend,
-      Filler,
-    } = await import("chart.js");
+    try {
+      const {
+        Chart,
+        CategoryScale,
+        LinearScale,
+        PointElement,
+        LineElement,
+        Title,
+        Tooltip,
+        Legend,
+        Filler,
+      } = await import("chart.js");
 
-    Chart.register(
-      CategoryScale,
-      LinearScale,
-      PointElement,
-      LineElement,
-      Title,
-      Tooltip,
-      Legend,
-      Filler
-    );
+      Chart.register(
+        CategoryScale,
+        LinearScale,
+        PointElement,
+        LineElement,
+        Title,
+        Tooltip,
+        Legend,
+        Filler
+      );
 
-    ChartJS = Chart;
+      // Set default Chart.js options to prevent DOM access issues
+      Chart.defaults.responsive = true;
+      Chart.defaults.maintainAspectRatio = false;
+
+      ChartJS = Chart;
+    } catch (error) {
+      console.error("Failed to register Chart.js components:", error);
+    }
   }
 };
 
@@ -71,9 +80,18 @@ export default function CryptoPriceChart({
   useEffect(() => {
     const initializeChart = async () => {
       if (typeof window !== "undefined") {
-        await registerChartComponents();
-        setIsMounted(true);
-        setChartReady(true);
+        try {
+          await registerChartComponents();
+          setIsMounted(true);
+          // Add a small delay to ensure DOM is ready
+          setTimeout(() => {
+            setChartReady(true);
+          }, 100);
+        } catch (error) {
+          console.error("Chart initialization error:", error);
+          setIsMounted(true);
+          setChartReady(false);
+        }
       }
     };
 
@@ -87,13 +105,8 @@ export default function CryptoPriceChart({
 
   // Force chart re-render when timeRange changes
   useEffect(() => {
-    if (isMounted && chartReady && chartRef.current) {
-      try {
-        chartRef.current.destroy();
-      } catch (error) {
-        console.warn("Chart destroy error:", error);
-      }
-    }
+    // No need to manually destroy chart - react-chartjs-2 handles this
+    // The key prop change will force a complete re-render
   }, [timeRange, isMounted, chartReady]);
 
   // Detect theme changes - only run on client side
@@ -116,98 +129,6 @@ export default function CryptoPriceChart({
 
     return () => observer.disconnect();
   }, [isMounted]);
-
-  // Optimized chart update effect (moved to top to fix hooks order)
-  useEffect(() => {
-    if (
-      !isMounted ||
-      !chartReady ||
-      !chartRef.current ||
-      !data ||
-      data.length === 0
-    ) {
-      return;
-    }
-
-    // Filter valid data inside useEffect
-    const validData = data.filter(
-      (point) =>
-        point &&
-        typeof point.timestamp === "number" &&
-        typeof point.price === "number" &&
-        point.price > 0 &&
-        !isNaN(point.price) &&
-        !isNaN(point.timestamp)
-    );
-
-    if (validData.length === 0) return;
-
-    // Calculate colors inside useEffect
-    const colors = isDarkMode
-      ? {
-          positive: "#10b981", // emerald-500
-          negative: "#ef4444", // red-500
-          positiveLight: "rgba(16, 185, 129, 0.2)",
-          negativeLight: "rgba(239, 68, 68, 0.2)",
-        }
-      : {
-          positive: "#059669", // emerald-600
-          negative: "#dc2626", // red-600
-          positiveLight: "rgba(5, 150, 105, 0.15)",
-          negativeLight: "rgba(220, 38, 38, 0.15)",
-        };
-
-    // Calculate price change inside useEffect
-    const firstPrice = validData[0]?.price || 0;
-    const lastPrice = validData[validData.length - 1]?.price || 0;
-    const isPositiveChange = lastPrice >= firstPrice;
-
-    // Format timestamp function
-    const formatTimestamp = (timestamp: number): string => {
-      const date = new Date(timestamp);
-      switch (timeRange) {
-        case "hourly":
-          return date.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        case "daily":
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          });
-        case "weekly":
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "2-digit",
-          });
-        case "monthly":
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-          });
-        default:
-          return date.toLocaleDateString("en-US");
-      }
-    };
-
-    const chart = chartRef.current;
-    // Only update if data actually changed
-    if (chart.data.datasets[0].data.length !== validData.length) {
-      chart.data.labels = validData.map((point) =>
-        formatTimestamp(point.timestamp)
-      );
-      chart.data.datasets[0].data = validData.map((point) => point.price);
-      chart.data.datasets[0].borderColor = isPositiveChange
-        ? colors.positive
-        : colors.negative;
-      chart.data.datasets[0].backgroundColor = isPositiveChange
-        ? colors.positiveLight
-        : colors.negativeLight;
-      chart.update("none"); // Use 'none' for faster updates
-    }
-  }, [data, timeRange, isMounted, chartReady, isDarkMode]);
 
   // Early return if not mounted or chart not ready (prevents SSR issues)
   if (!isMounted || !chartReady) {
@@ -379,6 +300,8 @@ export default function CryptoPriceChart({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    // Add resize observer configuration to prevent null reference errors
+    resizeDelay: 50,
     interaction: {
       mode: "index" as const,
       intersect: false,
@@ -386,6 +309,15 @@ export default function CryptoPriceChart({
     animation: {
       duration: 750,
       easing: "easeInOutQuart" as const,
+    },
+    // Prevent Chart.js from trying to access DOM during SSR
+    onResize: (chart: any, size: any) => {
+      if (typeof window === "undefined" || !chart.canvas) return;
+      try {
+        chart.resize();
+      } catch (error) {
+        console.warn("Chart resize error:", error);
+      }
     },
     plugins: {
       legend: {
@@ -527,22 +459,22 @@ export default function CryptoPriceChart({
         style={{ borderRadius: "var(--radius-card)" }}
         className="h-80 relative overflow-hidden"
       >
-        {isMounted && chartReady ? (
-          <Line
-            ref={chartRef}
-            data={chartData}
-            options={options}
-            key={`chart-${timeRange}-${validData[0]?.timestamp}-${
-              validData[validData.length - 1]?.timestamp
-            }`}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-pulse text-gray-500 dark:text-gray-400">
-              Initializing chart...
+        <ChartWrapper>
+          {isMounted && chartReady ? (
+            <Line
+              ref={chartRef}
+              data={chartData}
+              options={options}
+              key={`chart-${timeRange}-${validData.length}-${isDarkMode}`}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-pulse text-gray-500 dark:text-gray-400">
+                Initializing chart...
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </ChartWrapper>
       </div>
 
       {/* Chart Stats */}
