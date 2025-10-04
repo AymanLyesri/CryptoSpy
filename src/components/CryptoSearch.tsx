@@ -183,7 +183,15 @@ export default function CryptoSearch({
     }).format(price);
   };
 
-  const formatPercentage = (percentage: number) => {
+  const formatPercentage = (percentage: number | null) => {
+    if (percentage === null || percentage === undefined) {
+      return (
+        <span className="font-medium text-gray-500 dark:text-gray-400">
+          N/A
+        </span>
+      );
+    }
+
     const isPositive = percentage > 0;
     return (
       <span

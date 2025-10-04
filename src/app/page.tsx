@@ -6,6 +6,8 @@ import CryptoPriceChart from "../components/CryptoPriceChart";
 import TimeRangeSelector from "../components/TimeRangeSelector";
 import ToastContainer from "../components/ToastContainer";
 import CoinInfo from "../components/CoinInfo";
+import LandingComponent from "../components/LandingComponent";
+import NewsComponent from "../components/NewsComponent";
 import { Cryptocurrency } from "../types/crypto";
 import { TimeRange } from "../types/chartData";
 import { useCryptoData } from "../hooks/useCryptoData";
@@ -20,6 +22,7 @@ export default function Home() {
   const [selectedTimeRange, setSelectedTimeRange] =
     useState<TimeRange>("daily");
   const [showStickySearch, setShowStickySearch] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const {
     priceHistory,
@@ -31,6 +34,25 @@ export default function Home() {
   } = useCryptoData();
 
   const { toasts, showToast, removeToast } = useToast();
+
+  // Detect theme changes
+  useEffect(() => {
+    const checkTheme = () => {
+      const isDark = document.documentElement.classList.contains("dark");
+      setIsDarkMode(isDark);
+    };
+
+    checkTheme();
+
+    // Listen for theme changes
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Handle sticky search bar visibility
   useEffect(() => {
@@ -155,6 +177,16 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Landing Component - Show when no crypto is selected */}
+        {!selectedCrypto && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <LandingComponent
+              onCoinSelect={handleCryptoSelect}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        )}
+
         {/* Selected Crypto Display */}
         {selectedCrypto && (
           <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-4 gap-6">
@@ -223,6 +255,15 @@ export default function Home() {
                     )}
                 </div>
               )}
+
+              {/* News Section - Below Chart */}
+              <div className="mt-8">
+                <NewsComponent
+                  isDarkMode={isDarkMode}
+                  title={`${selectedCrypto.name} News & Updates`}
+                  selectedCrypto={selectedCrypto}
+                />
+              </div>
             </div>
           </div>
         )}
