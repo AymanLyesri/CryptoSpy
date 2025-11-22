@@ -1,6 +1,11 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { Cryptocurrency } from "../types/crypto";
+import { NewsItem } from "../types/news";
+import { useNewsData } from "../hooks/useNewsData";
+import AdComponent from "./AdComponent";
+import { newsApiService } from "@/services/newsApi";
 
 interface NewsComponentProps {
   isDarkMode?: boolean;
@@ -9,129 +14,31 @@ interface NewsComponentProps {
   selectedCrypto?: Cryptocurrency | null;
 }
 
-interface NewsItem {
-  id: number;
-  title: string;
-  summary: string;
-  time: string;
-  category: string;
-}
-
 export default function NewsComponent({
   isDarkMode = false,
-  title = "Latest News",
+  title,
   className = "",
   selectedCrypto = null,
 }: NewsComponentProps) {
-  // Function to generate coin-specific news
-  const generateCoinSpecificNews = (crypto: Cryptocurrency): NewsItem[] => {
-    const coinName = crypto.name;
-    const coinSymbol = crypto.symbol.toUpperCase();
-    const priceChange = crypto.price_change_percentage_24h || 0;
-    const isPositive = priceChange > 0;
+  const [dynamicTitle, setDynamicTitle] = useState(title || "Latest News");
 
-    return [
-      {
-        id: 1,
-        title: `${coinName} (${coinSymbol}) ${
-          isPositive ? "Surges" : "Dips"
-        } ${Math.abs(priceChange).toFixed(1)}% in 24 Hours`,
-        summary: `${coinName} shows ${
-          isPositive ? "strong bullish momentum" : "bearish pressure"
-        } as trading volume increases across major exchanges...`,
-        time: "1 hour ago",
-        category: "Market",
-      },
-      {
-        id: 2,
-        title: `Technical Analysis: ${coinName} Price Action`,
-        summary: `Latest charts show ${coinName} testing key support/resistance levels with potential for ${
-          isPositive ? "further upside" : "consolidation"
-        }...`,
-        time: "3 hours ago",
-        category: "Analysis",
-      },
-      {
-        id: 3,
-        title: `${coinName} Network Activity Reaches New Milestone`,
-        summary: `On-chain metrics for ${coinName} show increasing network usage and transaction volume, indicating growing adoption...`,
-        time: "6 hours ago",
-        category: "Technology",
-      },
-      {
-        id: 4,
-        title: `Institutional Interest in ${coinName} Grows`,
-        summary: `Major investment firms are showing increased interest in ${coinName} as part of their digital asset portfolios...`,
-        time: "12 hours ago",
-        category: "Institutional",
-      },
-      {
-        id: 5,
-        title: `${coinName} Developer Activity Update`,
-        summary: `Recent commits and updates to the ${coinName} protocol show continued development and improvement efforts...`,
-        time: "1 day ago",
-        category: "Development",
-      },
-      {
-        id: 6,
-        title: `Market Correlation: ${coinName} vs Bitcoin`,
-        summary: `Analysis shows ${coinName} correlation with Bitcoin and its position in the broader cryptocurrency market...`,
-        time: "2 days ago",
-        category: "Market",
-      },
-    ];
-  };
+  // Use the news hook to get dynamic data
+  const { news, loading, error, refreshNews, lastUpdated } = useNewsData({
+    selectedCrypto,
+    autoRefresh: true,
+    refreshInterval: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Sample general news data
-  const news: NewsItem[] = [
-    {
-      id: 1,
-      title: "Bitcoin Reaches New All-Time High",
-      summary: "BTC surpasses previous records amid institutional adoption...",
-      time: "2 hours ago",
-      category: "Market",
-    },
-    {
-      id: 2,
-      title: "Ethereum 2.0 Staking Rewards Increase",
-      summary: "Validators seeing higher returns as network activity grows...",
-      time: "4 hours ago",
-      category: "Technology",
-    },
-    {
-      id: 3,
-      title: "New DeFi Protocol Launches",
-      summary: "Revolutionary lending platform promises better yields...",
-      time: "6 hours ago",
-      category: "DeFi",
-    },
-    {
-      id: 4,
-      title: "Regulatory Update: Crypto Guidelines",
-      summary: "Government releases new framework for digital assets...",
-      time: "1 day ago",
-      category: "Regulation",
-    },
-    {
-      id: 5,
-      title: "Major Exchange Adds New Altcoin",
-      summary: "Popular trading platform expands cryptocurrency offerings...",
-      time: "2 days ago",
-      category: "Market",
-    },
-    {
-      id: 6,
-      title: "Smart Contract Security Audit Released",
-      summary: "New findings reveal best practices for DeFi development...",
-      time: "3 days ago",
-      category: "Technology",
-    },
-  ];
-
-  // Use coin-specific news if a crypto is selected, otherwise use general news
-  const newsToShow = selectedCrypto
-    ? generateCoinSpecificNews(selectedCrypto)
-    : news;
+  // Update title based on time and selection
+  useEffect(() => {
+    if (title) {
+      setDynamicTitle(title);
+    } else if (selectedCrypto) {
+      setDynamicTitle(`${selectedCrypto.name} News`);
+    } else {
+      setDynamicTitle(newsApiService.getNewsGreeting());
+    }
+  }, [title, selectedCrypto]);
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -154,6 +61,36 @@ export default function NewsComponent({
     }
   };
 
+  const formatTimeAgo = (dateString: string): string => {
+    const now = new Date();
+    const publishedAt = new Date(dateString);
+    const diffMs = now.getTime() - publishedAt.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffHours < 1) {
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+    } else {
+      return publishedAt.toLocaleDateString();
+    }
+  };
+
+  const getSentimentIcon = (sentiment?: string): string => {
+    switch (sentiment) {
+      case "positive":
+        return "📈";
+      case "negative":
+        return "📉";
+      default:
+        return "📰";
+    }
+  };
+
   return (
     <div
       className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${
@@ -167,43 +104,196 @@ export default function NewsComponent({
       }}
     >
       <div className="p-6">
-        <div className="flex items-center mb-6">
-          <span className="text-2xl mr-3">📰</span>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            {title}
-          </h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">📰</span>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {dynamicTitle}
+            </h2>
+          </div>
+          {!loading && (
+            <button
+              onClick={refreshNews}
+              className={`p-2 rounded-lg transition-colors ${
+                isDarkMode
+                  ? "hover:bg-gray-700 text-gray-400 hover:text-gray-200"
+                  : "hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+              }`}
+              title="Refresh news"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
+          )}
         </div>
 
+        {lastUpdated && !loading && (
+          <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              ⚠️ Using cached news data. {error}
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {newsToShow.map((item) => (
-            <div
-              key={item.id}
-              className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
-                isDarkMode
-                  ? "bg-gray-700/30 border-gray-600 hover:bg-gray-700/50"
-                  : "bg-white/30 border-gray-200 hover:bg-white/60"
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
-                    item.category
-                  )}`}
-                >
-                  {item.category}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {item.time}
+          {/* Top ad placement */}
+          <AdComponent
+            adSlot="2822503833"
+            className="mb-4"
+            fallback={
+              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  📰 Advertisement Space
                 </span>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
-                {item.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                {item.summary}
+            }
+          />
+
+          {loading && (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className={`p-4 rounded-lg border animate-pulse ${
+                    isDarkMode
+                      ? "bg-gray-700/30 border-gray-600"
+                      : "bg-white/30 border-gray-200"
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
+                    <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-12"></div>
+                  </div>
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!loading && news.length === 0 && (
+            <div className="text-center py-8">
+              <span className="text-4xl mb-4 block">📭</span>
+              <p className="text-gray-500 dark:text-gray-400">
+                No news available at the moment
               </p>
             </div>
-          ))}
+          )}
+
+          {!loading &&
+            news.map((item, index) => (
+              <React.Fragment key={item.id}>
+                {/* Insert ad after every 3rd news item */}
+                {/* {index === 2 && (
+                  <AdComponent
+                    adSlot="9876543210"
+                    adFormat="fluid"
+                    className="my-4"
+                    fallback={
+                      <div className="text-center p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                          💼 Sponsored Content
+                        </span>
+                      </div>
+                    }
+                  />
+                )} */}
+                <div
+                  className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
+                    isDarkMode
+                      ? "bg-gray-700/30 border-gray-600 hover:bg-gray-700/50"
+                      : "bg-white/30 border-gray-200 hover:bg-white/60"
+                  }`}
+                  onClick={() => item.url && window.open(item.url, "_blank")}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(
+                          item.category
+                        )}`}
+                      >
+                        {item.category}
+                      </span>
+                      {item.sentiment && (
+                        <span className="text-sm">
+                          {getSentimentIcon(item.sentiment)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTimeAgo(item.publishedAt)}
+                    </span>
+                  </div>
+
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                    {item.summary}
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {item.source.name}
+                    </span>
+                    {item.currencies && item.currencies.length > 0 && (
+                      <div className="flex space-x-1">
+                        {item.currencies.slice(0, 3).map((currency) => (
+                          <span
+                            key={currency}
+                            className="text-xs px-1 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded"
+                          >
+                            {currency}
+                          </span>
+                        ))}
+                        {item.currencies.length > 3 && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            +{item.currencies.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+
+          {/* Bottom ad placement - only show if we have news items */}
+          {!loading && news.length > 0 && (
+            <AdComponent
+              adSlot="1234567890"
+              adFormat="rectangle"
+              className="mt-6"
+              style={{ minHeight: "250px" }}
+              fallback={
+                <div className="text-center p-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg border">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Support us by allowing ads or consider our premium features
+                  </span>
+                </div>
+              }
+            />
+          )}
         </div>
       </div>
     </div>
