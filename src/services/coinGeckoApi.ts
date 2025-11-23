@@ -75,175 +75,87 @@ export class CoinGeckoService {
 
     // Check cache first
     if (cacheKey && apiCache.has(cacheKey)) {
-      console.log(`Cache hit: ${cacheKey}`);
       return apiCache.get(cacheKey);
     }
 
-    // Use request deduplication to prevent duplicate requests
-    return rateLimiter.deduplicateRequest(cacheKey || url, async () => {
-      let lastError: Error | null = null;
+    // Check rate limit before making request
+    if (!rateLimiter.canMakeRequest()) {
+      throw new Error(
+        "Rate limit exceeded. Please wait before making more requests."
+      );
+    }
 
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          // Check rate limit
-          if (!(await rateLimiter.canMakeRequest())) {
-            await rateLimiter.waitForNextSlot();
-          }
+    let lastError: Error | null = null;
 
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-          try {
-            // Use our internal API route instead of direct CoinGecko calls
-            // Handle both production and development environments
-            const baseUrl =
-              typeof window !== "undefined"
-                ? window.location.origin
-                : process.env.VERCEL_URL
-                ? `https://${process.env.VERCEL_URL}`
-                : process.env.NEXT_PUBLIC_APP_URL
-                ? process.env.NEXT_PUBLIC_APP_URL
-                : "http://localhost:3000";
+        // Use our internal API route instead of direct CoinGecko calls
+        const baseUrl =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : process.env.NEXT_PUBLIC_APP_URL
+            ? process.env.NEXT_PUBLIC_APP_URL
+            : "http://localhost:3000";
 
-            const apiUrl = url.startsWith(COINGECKO_BASE_URL)
-              ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
-                  url.replace(COINGECKO_BASE_URL + "/", "")
-                )}`
-              : url;
+        const apiUrl = url.startsWith(COINGECKO_BASE_URL)
+          ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
+              url.replace(COINGECKO_BASE_URL + "/", "")
+            )}`
+          : url;
 
-            console.log(`Making request to: ${apiUrl}`);
+        const response = await fetch(apiUrl, {
+          signal: controller.signal,
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "User-Agent": "CryptoSpy/1.0 (Vercel)",
+          },
+        });
 
-            const response = await fetch(apiUrl, {
-              signal: controller.signal,
-              headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                // Add user agent for Vercel
-                "User-Agent": "CryptoSpy/1.0 (Vercel)",
-              },
-            });
+        clearTimeout(timeoutId);
 
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-              if (response.status === 401) {
-                console.warn(
-                  "API authentication issue - using public API limits"
-                );
-                // For 401, we'll continue with public API limits
-                // Don't throw error immediately, let it fall through to retry logic
-              } else if (response.status === 429) {
-                rateLimiter.recordFailure();
-                throw new Error(
-                  `Rate limit exceeded. Please wait before making more requests.`
-                );
-              } else {
-                throw new Error(
-                  `API Error ${response.status}: ${response.statusText}`
-                );
-              }
-            }
-
-            rateLimiter.recordRequest();
-
-            const data = await response.json();
-
-            // Validate data structure before caching
-            if (data && typeof data === "object") {
-              // Cache the successful response
-              if (cacheKey) {
-                const ttl = getCacheTTL(cacheType);
-                apiCache.set(cacheKey, data, ttl);
-                console.log(`Cached ${cacheKey} for ${ttl / 1000}s`);
-              }
-            }
-
-            return data;
-          } catch (fetchError) {
-            clearTimeout(timeoutId);
-            throw fetchError;
-          }
-        } catch (error) {
-          lastError =
-            error instanceof Error ? error : new Error("Unknown error");
-
-          // Special handling for network errors on Vercel
-          if (
-            lastError.message.includes("network") ||
-            lastError.message.includes("ENOTFOUND") ||
-            lastError.message.includes("timeout")
-          ) {
-            console.warn(
-              `Network error on attempt ${attempt + 1}:`,
-              lastError.message
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error(
+              "Rate limit exceeded. Please wait before making more requests."
             );
-          }
-
-          // Special handling for 401 errors - try without API key
-          if (
-            lastError.message.includes("Authentication failed") &&
-            attempt === 0
-          ) {
-            try {
-              console.log("Retrying request without API key...");
-              const baseUrl =
-                typeof window !== "undefined"
-                  ? window.location.origin
-                  : process.env.VERCEL_URL
-                  ? `https://${process.env.VERCEL_URL}`
-                  : process.env.NEXT_PUBLIC_APP_URL
-                  ? process.env.NEXT_PUBLIC_APP_URL
-                  : "http://localhost:3000";
-
-              const fallbackApiUrl = url.startsWith(COINGECKO_BASE_URL)
-                ? `${baseUrl}/api/coingecko?endpoint=${encodeURIComponent(
-                    url.replace(COINGECKO_BASE_URL + "/", "")
-                  )}`
-                : url;
-
-              const fallbackResponse = await fetch(fallbackApiUrl, {
-                headers: {
-                  accept: "application/json",
-                  "Content-Type": "application/json",
-                  "User-Agent": "CryptoSpy/1.0 (Vercel-Fallback)",
-                },
-              });
-
-              if (fallbackResponse.ok) {
-                rateLimiter.recordRequest();
-                const data = await fallbackResponse.json();
-
-                if (cacheKey && data && typeof data === "object") {
-                  const ttl = getCacheTTL(cacheType);
-                  apiCache.set(cacheKey, data, ttl);
-                }
-
-                return data;
-              }
-            } catch (fallbackError) {
-              console.warn("Fallback request also failed:", fallbackError);
-            }
-          }
-
-          if (error instanceof Error && error.name === "AbortError") {
-            lastError = new Error("Request timeout");
-          }
-
-          if (attempt < retries) {
-            const backoffTime = Math.min(1000 * Math.pow(2, attempt), 5000);
-            console.log(
-              `Request failed, retrying in ${backoffTime}ms (attempt ${
-                attempt + 1
-              }/${retries + 1})`
+          } else {
+            throw new Error(
+              `API Error ${response.status}: ${response.statusText}`
             );
-            await new Promise((resolve) => setTimeout(resolve, backoffTime));
           }
         }
-      }
 
-      rateLimiter.recordFailure();
-      throw lastError || new Error("All retry attempts failed");
-    });
+        rateLimiter.recordRequest();
+        const data = await response.json();
+
+        // Cache the successful response
+        if (cacheKey && data && typeof data === "object") {
+          const ttl = getCacheTTL(cacheType);
+          apiCache.set(cacheKey, data, ttl);
+        }
+
+        return data;
+      } catch (error: any) {
+        lastError = error instanceof Error ? error : new Error("Unknown error");
+
+        if (error.name === "AbortError") {
+          lastError = new Error("Request timeout");
+        }
+
+        if (attempt < retries) {
+          const backoffTime = Math.min(1000 * Math.pow(2, attempt), 5000);
+          await new Promise((resolve) => setTimeout(resolve, backoffTime));
+        }
+      }
+    }
+
+    throw lastError || new Error("All retry attempts failed");
   }
 
   static async getPopularCryptos(

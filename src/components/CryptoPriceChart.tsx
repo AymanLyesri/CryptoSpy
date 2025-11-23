@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PriceDataPoint, TimeRange } from "../types/chartData";
 import ChartWrapper from "./ChartWrapper";
+import { formatters } from "../utils/themeUtils";
 
 // Dynamically import Chart.js components to avoid SSR issues
 const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
@@ -72,7 +73,6 @@ export default function CryptoPriceChart({
   currentPrice,
 }: CryptoPriceChartProps) {
   const chartRef = useRef<any>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [chartReady, setChartReady] = useState(false);
 
@@ -109,37 +109,16 @@ export default function CryptoPriceChart({
     // The key prop change will force a complete re-render
   }, [timeRange, isMounted, chartReady]);
 
-  // Detect theme changes - only run on client side
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const checkTheme = () => {
-      const isDark = document.documentElement.classList.contains("dark");
-      setIsDarkMode(isDark);
-    };
-
-    checkTheme();
-
-    // Listen for theme changes
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, [isMounted]);
+  // No need for complex theme detection - CSS variables handle this automatically
 
   // Early return if not mounted or chart not ready (prevents SSR issues)
   if (!isMounted || !chartReady) {
     return (
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+      <div className="unified-card">
         <div className="text-center py-12">
-          <div className="animate-pulse">
-            <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-              Loading chart...
-            </div>
-            <div className="w-12 h-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="loading-pulse">
+            <div className="text-muted text-lg mb-4">Loading chart...</div>
+            <div className="loading-spinner mx-auto mb-4"></div>
           </div>
         </div>
       </div>
@@ -149,13 +128,11 @@ export default function CryptoPriceChart({
   // Early return if no valid data
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+      <div className="unified-card">
         <div className="text-center py-12">
-          <div className="animate-pulse">
-            <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
-              Loading chart data...
-            </div>
-            <div className="w-12 h-12 mx-auto mb-4 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="loading-pulse">
+            <div className="text-muted text-lg mb-4">Loading chart data...</div>
+            <div className="loading-spinner mx-auto mb-4"></div>
           </div>
         </div>
       </div>
@@ -175,12 +152,10 @@ export default function CryptoPriceChart({
 
   if (validData.length === 0) {
     return (
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300">
+      <div className="unified-card">
         <div className="text-center py-12">
-          <div className="text-red-500 dark:text-red-400 text-lg mb-4">
-            Invalid chart data
-          </div>
-          <div className="text-gray-400 dark:text-gray-500 text-sm">
+          <div className="trend-negative text-lg mb-4">Invalid chart data</div>
+          <div className="text-muted text-sm">
             Price data contains invalid values
           </div>
         </div>
@@ -188,36 +163,53 @@ export default function CryptoPriceChart({
     );
   }
 
-  // Theme-aware color functions
-  const getColors = () => {
-    if (isDarkMode) {
-      return {
-        positive: "#10b981", // emerald-500
-        negative: "#ef4444", // red-500
-        positiveLight: "rgba(16, 185, 129, 0.2)",
-        negativeLight: "rgba(239, 68, 68, 0.2)",
-        textPrimary: "#f9fafb", // gray-50
-        textSecondary: "#d1d5db", // gray-300
-        gridColor: "rgba(209, 213, 219, 0.1)",
-        tooltipBg: "rgba(17, 24, 39, 0.95)", // gray-900 with opacity
-        tooltipBorder: "#374151", // gray-700
-      };
-    } else {
-      return {
-        positive: "#059669", // emerald-600
-        negative: "#dc2626", // red-600
-        positiveLight: "rgba(5, 150, 105, 0.15)",
-        negativeLight: "rgba(220, 38, 38, 0.15)",
-        textPrimary: "#1f2937", // gray-800
-        textSecondary: "#6b7280", // gray-500
-        gridColor: "rgba(107, 114, 128, 0.2)",
-        tooltipBg: "rgba(255, 255, 255, 0.95)",
-        tooltipBorder: "#e5e7eb", // gray-200
-      };
-    }
+  // Function to get actual CSS variable values at runtime
+  const getCSSVariableValue = (variableName: string): string => {
+    if (typeof window === "undefined") return "#000000"; // SSR fallback
+    return (
+      getComputedStyle(document.documentElement)
+        .getPropertyValue(variableName)
+        .trim() || "#000000"
+    );
   };
 
-  const colors = getColors();
+  // Convert RGB color to RGBA with opacity
+  const rgbToRgba = (rgb: string, opacity: number): string => {
+    // Handle both "rgb(r, g, b)" and "#rrggbb" formats
+    if (rgb.startsWith("rgb(")) {
+      return rgb.replace("rgb(", "rgba(").replace(")", `, ${opacity})`);
+    } else if (rgb.startsWith("#")) {
+      // Convert hex to rgba
+      const hex = rgb.replace("#", "");
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+    }
+    return `${rgb}${Math.round(opacity * 255)
+      .toString(16)
+      .padStart(2, "0")}`; // fallback for other formats
+  };
+
+  // Get actual resolved colors for Chart.js
+  const getResolvedChartColors = () => {
+    const successColor = getCSSVariableValue("--color-success-600");
+    const errorColor = getCSSVariableValue("--color-error-600");
+
+    return {
+      positive: successColor,
+      negative: errorColor,
+      positiveLight: rgbToRgba(successColor, 0.1),
+      negativeLight: rgbToRgba(errorColor, 0.1),
+      textPrimary: getCSSVariableValue("--text-primary"),
+      textSecondary: getCSSVariableValue("--text-secondary"),
+      gridColor: getCSSVariableValue("--text-muted"),
+      tooltipBg: getCSSVariableValue("--bg-card"),
+      tooltipBorder: getCSSVariableValue("--border-primary"),
+    };
+  };
+
+  const resolvedColors = getResolvedChartColors();
 
   // Format timestamp based on time range
   const formatTimestamp = (timestamp: number): string => {
@@ -250,15 +242,8 @@ export default function CryptoPriceChart({
     }
   };
 
-  // Format price for display
-  const formatPrice = (price: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: price < 1 ? 4 : 2,
-      maximumFractionDigits: price < 1 ? 4 : 2,
-    }).format(price);
-  };
+  // Use unified formatter from themeUtils
+  const formatPrice = formatters.price;
 
   // Calculate price change using valid data
   const priceChange =
@@ -277,19 +262,21 @@ export default function CryptoPriceChart({
       {
         label: `${cryptoName} Price`,
         data: validData.map((point) => point.price),
-        borderColor: isPositiveChange ? colors.positive : colors.negative,
+        borderColor: isPositiveChange
+          ? resolvedColors.positive
+          : resolvedColors.negative,
         backgroundColor: isPositiveChange
-          ? colors.positiveLight
-          : colors.negativeLight,
+          ? resolvedColors.positiveLight
+          : resolvedColors.negativeLight,
         borderWidth: 3,
         fill: true,
         tension: 0.4,
         pointRadius: 0,
         pointHoverRadius: 8,
         pointHoverBackgroundColor: isPositiveChange
-          ? colors.positive
-          : colors.negative,
-        pointHoverBorderColor: isDarkMode ? "#1f2937" : "#ffffff",
+          ? resolvedColors.positive
+          : resolvedColors.negative,
+        pointHoverBorderColor: "var(--bg-card)",
         pointHoverBorderWidth: 3,
         pointBorderWidth: 0,
       },
@@ -324,10 +311,10 @@ export default function CryptoPriceChart({
         display: false,
       },
       tooltip: {
-        backgroundColor: colors.tooltipBg,
-        titleColor: colors.textPrimary,
-        bodyColor: colors.textPrimary,
-        borderColor: colors.tooltipBorder,
+        backgroundColor: resolvedColors.tooltipBg,
+        titleColor: resolvedColors.textPrimary,
+        bodyColor: resolvedColors.textPrimary,
+        borderColor: resolvedColors.tooltipBorder,
         borderWidth: 1,
         displayColors: false,
         cornerRadius: 12,
@@ -368,7 +355,7 @@ export default function CryptoPriceChart({
           display: false,
         },
         ticks: {
-          color: colors.textSecondary,
+          color: resolvedColors.textSecondary,
           font: {
             size: 12,
             weight: "normal" as const,
@@ -381,14 +368,14 @@ export default function CryptoPriceChart({
         display: true,
         position: "right" as const,
         grid: {
-          color: colors.gridColor,
+          color: resolvedColors.gridColor,
           lineWidth: 1,
         },
         border: {
           display: false,
         },
         ticks: {
-          color: colors.textSecondary,
+          color: resolvedColors.textSecondary,
           font: {
             size: 12,
             weight: "normal" as const,
@@ -409,31 +396,33 @@ export default function CryptoPriceChart({
   };
 
   return (
-    <div
-      style={{
-        padding: "var(--spacing-section)",
-        borderRadius: "var(--radius-card)",
-        boxShadow: "var(--shadow-card)",
-      }}
-      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
-    >
+    <div className="unified-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <div className="text-center sm:text-left">
-          <h3 className="text-heading">
+          <h3
+            className="text-2xl sm:text-3xl font-bold mb-2"
+            style={{ color: resolvedColors.textPrimary }}
+          >
             {cryptoName}{" "}
-            <span className="text-muted text-lg">
+            <span
+              className="text-lg"
+              style={{ color: resolvedColors.textSecondary }}
+            >
               ({cryptoSymbol.toUpperCase()})
             </span>
           </h3>
-          <div className="flex items-center justify-center sm:justify-start space-x-4 mt-3">
-            <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="flex items-center justify-center sm:justify-start space-x-4">
+            <span
+              className="text-2xl sm:text-3xl font-bold"
+              style={{ color: resolvedColors.textPrimary }}
+            >
               {formatPrice(currentPrice)}
             </span>
             <span
-              className={`text-sm sm:text-lg font-medium px-3 py-1 rounded-full transition-all duration-300 ${
+              className={`unified-badge ${
                 isPositiveChange
-                  ? "text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30"
-                  : "text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30"
+                  ? "unified-badge--success"
+                  : "unified-badge--error"
               }`}
             >
               {isPositiveChange ? "+" : ""}
@@ -443,33 +432,36 @@ export default function CryptoPriceChart({
         </div>
         <div className="text-center sm:text-right">
           <div
-            className={`text-sm font-medium mb-1 px-3 py-1 rounded-full transition-colors duration-300 ${
-              isDarkMode
-                ? "text-blue-400 bg-blue-900/30"
-                : "text-blue-600 bg-blue-100"
-            }`}
+            className="text-sm font-medium mb-1 px-3 py-1 rounded-full transition-colors duration-300"
+            style={{
+              color: getCSSVariableValue("--color-primary-600"),
+              backgroundColor: getCSSVariableValue("--bg-tertiary"),
+              border: `1px solid ${getCSSVariableValue("--color-primary-600")}`,
+            }}
           >
             {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Chart
           </div>
-          <div className="text-muted">{validData.length} data points</div>
+          <div style={{ color: resolvedColors.textSecondary }}>
+            {validData.length} data points
+          </div>
         </div>
       </div>
 
-      <div
-        style={{ borderRadius: "var(--radius-card)" }}
-        className="h-80 relative overflow-hidden"
-      >
+      <div className="h-80 relative overflow-hidden rounded-lg">
         <ChartWrapper>
           {isMounted && chartReady ? (
             <Line
               ref={chartRef}
               data={chartData}
               options={options}
-              key={`chart-${timeRange}-${validData.length}-${isDarkMode}`}
+              key={`chart-${timeRange}-${validData.length}`}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-pulse text-gray-500 dark:text-gray-400">
+              <div
+                style={{ color: resolvedColors.textSecondary }}
+                className="loading-pulse"
+              >
                 Initializing chart...
               </div>
             </div>
@@ -479,51 +471,59 @@ export default function CryptoPriceChart({
 
       {/* Chart Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <div
-          style={{
-            padding: "var(--spacing-card)",
-            borderRadius: "var(--radius-card)",
-          }}
-          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
-        >
-          <div className="text-label mb-1 uppercase tracking-wider">High</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white">
+        <div className="unified-card unified-card--compact text-center">
+          <div
+            className="text-xs font-semibold mb-1 uppercase tracking-wider"
+            style={{ color: resolvedColors.textSecondary }}
+          >
+            High
+          </div>
+          <div
+            className="text-lg font-bold"
+            style={{ color: resolvedColors.textPrimary }}
+          >
             {formatPrice(Math.max(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div
-          style={{
-            padding: "var(--spacing-card)",
-            borderRadius: "var(--radius-card)",
-          }}
-          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
-        >
-          <div className="text-label mb-1 uppercase tracking-wider">Low</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white">
+        <div className="unified-card unified-card--compact text-center">
+          <div
+            className="text-xs font-semibold mb-1 uppercase tracking-wider"
+            style={{ color: resolvedColors.textSecondary }}
+          >
+            Low
+          </div>
+          <div
+            className="text-lg font-bold"
+            style={{ color: resolvedColors.textPrimary }}
+          >
             {formatPrice(Math.min(...validData.map((d) => d.price)))}
           </div>
         </div>
-        <div
-          style={{
-            padding: "var(--spacing-card)",
-            borderRadius: "var(--radius-card)",
-          }}
-          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
-        >
-          <div className="text-label mb-1 uppercase tracking-wider">First</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white">
+        <div className="unified-card unified-card--compact text-center">
+          <div
+            className="text-xs font-semibold mb-1 uppercase tracking-wider"
+            style={{ color: resolvedColors.textSecondary }}
+          >
+            First
+          </div>
+          <div
+            className="text-lg font-bold"
+            style={{ color: resolvedColors.textPrimary }}
+          >
             {formatPrice(validData[0]?.price || 0)}
           </div>
         </div>
-        <div
-          style={{
-            padding: "var(--spacing-card)",
-            borderRadius: "var(--radius-card)",
-          }}
-          className="text-center bg-gray-50/50 dark:bg-gray-700/30"
-        >
-          <div className="text-label mb-1 uppercase tracking-wider">Latest</div>
-          <div className="text-lg font-bold text-gray-900 dark:text-white">
+        <div className="unified-card unified-card--compact text-center">
+          <div
+            className="text-xs font-semibold mb-1 uppercase tracking-wider"
+            style={{ color: resolvedColors.textSecondary }}
+          >
+            Latest
+          </div>
+          <div
+            className="text-lg font-bold"
+            style={{ color: resolvedColors.textPrimary }}
+          >
             {formatPrice(validData[validData.length - 1]?.price || 0)}
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Cryptocurrency } from "../types/crypto";
 import { useCryptoData } from "../hooks/useCryptoData";
+import { unifiedStyles, formatters } from "@/utils/themeUtils";
 
 interface CryptoSearchProps {
   onSelect?: (crypto: Cryptocurrency) => void;
@@ -225,17 +226,15 @@ export default function CryptoSearch({
             }
           }}
           placeholder={placeholder}
-          style={{
-            borderRadius: "var(--radius-input)",
-            padding: compact
-              ? "0.75rem 3rem 0.75rem 1rem"
-              : "var(--spacing-card) 3rem var(--spacing-card) var(--spacing-card)",
-            boxShadow: compact
-              ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-              : "var(--shadow-card)",
-            fontSize: compact ? "0.875rem" : "1rem",
-          }}
-          className="w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:border-transparent focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
+          className={`
+            ${compact ? unifiedStyles.input.compact : unifiedStyles.input.base}
+            w-full pr-12
+            bg-white/80 dark:bg-gray-800/80 
+            text-gray-900 dark:text-gray-100 
+            placeholder:text-gray-500 dark:placeholder:text-gray-400 
+            focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
+            transition-all duration-300
+          `}
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           {isSearching || isLoadingPopular || isTyping ? (
@@ -267,15 +266,7 @@ export default function CryptoSearch({
       {/* Dropdown */}
       {isOpen && cryptosToShow.length > 0 && (
         <div
-          style={{
-            borderRadius: "var(--radius-card)",
-            boxShadow: "var(--shadow-card-hover)",
-          }}
-          className={`absolute z-10 w-full mt-2 border backdrop-blur-md max-h-80 overflow-y-auto transition-all duration-300 ${
-            isDarkMode
-              ? "bg-gray-800/95 border-gray-700"
-              : "bg-white/95 border-gray-200"
-          }`}
+          className={`${unifiedStyles.dropdown.container} absolute z-10 w-full mt-2`}
         >
           {!query.trim() && (
             <div
@@ -303,19 +294,18 @@ export default function CryptoSearch({
             <div
               key={crypto.id}
               onClick={() => handleSelect(crypto)}
-              className={`${
-                compact ? "px-4 py-3" : "px-6 py-4"
-              } cursor-pointer border-b last:border-b-0 transition-all duration-200 ${
-                isDarkMode
-                  ? "border-gray-700 hover:bg-gray-700/50"
-                  : "border-gray-100 hover:bg-gray-50"
-              } ${
-                index === highlightedIndex
-                  ? isDarkMode
-                    ? "bg-blue-900/30 border-blue-700"
-                    : "bg-blue-50 border-blue-200"
-                  : ""
-              }`}
+              className={`
+                ${
+                  compact
+                    ? unifiedStyles.dropdown.itemCompact
+                    : unifiedStyles.dropdown.item
+                }
+                ${
+                  index === highlightedIndex
+                    ? unifiedStyles.dropdown.itemHighlighted
+                    : ""
+                }
+              `}
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">

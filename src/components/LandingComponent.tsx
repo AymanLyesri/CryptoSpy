@@ -4,6 +4,7 @@ import { Cryptocurrency } from "../types/crypto";
 import { useCryptoData } from "../hooks/useCryptoData";
 import NewsComponent from "./NewsComponent";
 import TipsComponent from "./TipsComponent";
+import { unifiedStyles, formatters } from "@/utils/themeUtils";
 
 interface LandingComponentProps {
   onCoinSelect?: (crypto: Cryptocurrency) => void;

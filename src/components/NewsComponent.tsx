@@ -5,6 +5,7 @@ import { Cryptocurrency } from "../types/crypto";
 import { useNewsData } from "../hooks/useNewsData";
 import AdComponent from "./AdComponent";
 import { newsApiService } from "@/services/newsApi";
+import { unifiedStyles, formatters, colors } from "@/utils/themeUtils";
 
 interface NewsComponentProps {
   isDarkMode?: boolean;
@@ -39,45 +40,9 @@ export default function NewsComponent({
     }
   }, [title, selectedCrypto]);
 
-  const getCategoryColor = (category: string) => {
-    switch (category.toLowerCase()) {
-      case "market":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "technology":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-      case "defi":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "regulation":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300";
-      case "analysis":
-        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300";
-      case "institutional":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300";
-      case "development":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-    }
-  };
+  const getCategoryColor = colors.getCategoryColor;
 
-  const formatTimeAgo = (dateString: string): string => {
-    const now = new Date();
-    const publishedAt = new Date(dateString);
-    const diffMs = now.getTime() - publishedAt.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffHours < 1) {
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
-    } else {
-      return publishedAt.toLocaleDateString();
-    }
-  };
+  const formatTimeAgo = formatters.timeAgo;
 
   const getSentimentIcon = (sentiment?: string): string => {
     switch (sentiment) {
@@ -91,17 +56,7 @@ export default function NewsComponent({
   };
 
   return (
-    <div
-      className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${
-        isDarkMode
-          ? "bg-gray-800/50 border-gray-700"
-          : "bg-white/50 border-gray-200"
-      } ${className}`}
-      style={{
-        borderRadius: "var(--radius-card)",
-        boxShadow: "var(--shadow-card)",
-      }}
-    >
+    <div className={`${unifiedStyles.card.base} ${className}`}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">

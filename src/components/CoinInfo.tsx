@@ -1,62 +1,27 @@
 "use client";
 
 import { Cryptocurrency } from "../types/crypto";
+import { unifiedStyles, formatters } from "@/utils/themeUtils";
 
 interface CoinInfoProps {
   crypto: Cryptocurrency;
 }
 
 export default function CoinInfo({ crypto }: CoinInfoProps) {
-  // Formatting functions
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: price < 1 ? 4 : 2,
-    }).format(price);
-  };
-
-  const formatMarketCap = (marketCap: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(marketCap);
-  };
-
-  const formatVolume = (volume: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(volume);
-  };
-
-  const formatSupply = (supply: number) => {
-    return new Intl.NumberFormat("en-US", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(supply);
-  };
-
   const formatPercentage = (percentage: number, showIcon: boolean = true) => {
-    const isPositive = percentage > 0;
+    const percentageData = formatters.percentage(percentage);
     return (
-      <span
-        className={`font-semibold transition-colors duration-200 ${
-          isPositive
-            ? "text-green-600 dark:text-green-400"
-            : "text-red-600 dark:text-red-400"
-        }`}
-      >
-        {isPositive ? "+" : ""}
-        {percentage.toFixed(2)}%{showIcon && getPercentageIcon(percentage)}
+      <span className={percentageData.className}>
+        {percentageData.formatted}
+        {showIcon && getPercentageIcon(percentage)}
       </span>
     );
   };
+
+  const formatPrice = formatters.price;
+  const formatMarketCap = formatters.currency;
+  const formatVolume = formatters.currency;
+  const formatSupply = formatters.supply;
 
   const getPercentageIcon = (percentage: number) => {
     if (percentage > 0) {
@@ -91,14 +56,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
   };
 
   return (
-    <div
-      style={{
-        padding: "var(--spacing-card)",
-        borderRadius: "var(--radius-card)",
-        boxShadow: "var(--shadow-card)",
-      }}
-      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-[var(--shadow-card-hover)] h-fit"
-    >
+    <div className={`${unifiedStyles.card.hover} h-fit`}>
       {/* Main Header Section */}
       <div className="flex flex-col gap-4 mb-6">
         {/* Coin Identity */}
@@ -239,7 +197,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
             {crypto.low_24h && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Low:</span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-600 dark:text-gray-400">
                   {formatPrice(crypto.low_24h)}
                 </span>
               </div>
@@ -247,7 +205,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
             {crypto.high_24h && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">High:</span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-600 dark:text-gray-400">
                   {formatPrice(crypto.high_24h)}
                 </span>
               </div>
@@ -267,7 +225,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
               <div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">ATH:</span>
-                  <span className="font-semibold">
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">
                     {formatPrice(crypto.ath)}
                   </span>
                 </div>
@@ -292,7 +250,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
               <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">ATL:</span>
-                  <span className="font-semibold">
+                  <span className="font-semibold text-gray-600 dark:text-gray-400">
                     {formatPrice(crypto.atl)}
                   </span>
                 </div>
@@ -331,7 +289,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
                 <span className="text-gray-600 dark:text-gray-400">
                   Circulating:
                 </span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-600 dark:text-gray-400">
                   {formatSupply(crypto.circulating_supply)} {crypto.symbol}
                 </span>
               </div>
@@ -339,7 +297,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
             {crypto.total_supply && (
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Total:</span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-600 dark:text-gray-400">
                   {formatSupply(crypto.total_supply)} {crypto.symbol}
                 </span>
               </div>
@@ -347,7 +305,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
             {crypto.max_supply && (
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Max:</span>
-                <span className="font-semibold">
+                <span className="font-semibold text-gray-600 dark:text-gray-400">
                   {formatSupply(crypto.max_supply)} {crypto.symbol}
                 </span>
               </div>
@@ -392,7 +350,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Times:</span>
-              <span className="font-semibold">
+              <span className="font-semibold text-gray-600 dark:text-gray-400">
                 {crypto.roi.times.toFixed(2)}x
               </span>
             </div>

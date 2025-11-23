@@ -92,101 +92,40 @@ class MemoryCache {
   }
 }
 
-// Enhanced rate limiter with exponential backoff and request deduplication
+// Simple rate limiter
 class RateLimiter {
   private requests: number[] = [];
   private maxRequests: number;
   private windowMs: number;
-  private backoffMultiplier: number = 1;
-  private maxBackoff: number = 30000; // 30 seconds max backoff
-  private pendingRequests = new Map<string, Promise<any>>();
 
-  constructor(maxRequests: number = 6, windowMs: number = 60000) {
-    // Conservative limit
+  constructor(maxRequests: number = 10, windowMs: number = 60000) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }
 
-  async canMakeRequest(): Promise<boolean> {
+  canMakeRequest(): boolean {
     const now = Date.now();
     // Remove requests outside the current window
     this.requests = this.requests.filter((time) => now - time < this.windowMs);
-
     return this.requests.length < this.maxRequests;
   }
 
   recordRequest(): void {
     this.requests.push(Date.now());
-    // Reset backoff on successful request
-    this.backoffMultiplier = 1;
-  }
-
-  recordFailure(): void {
-    // Increase backoff for future requests
-    this.backoffMultiplier = Math.min(
-      this.backoffMultiplier * 2,
-      this.maxBackoff / 1000
-    );
-  }
-
-  async waitForNextSlot(): Promise<void> {
-    if (this.requests.length === 0) return;
-
-    const oldestRequest = Math.min(...this.requests);
-    const baseWaitTime = this.windowMs - (Date.now() - oldestRequest);
-    const waitTime = Math.max(baseWaitTime, 1000 * this.backoffMultiplier);
-
-    if (waitTime > 0) {
-      console.log(
-        `Rate limit hit, waiting ${Math.round(
-          waitTime / 1000
-        )}s before next request`
-      );
-      await new Promise((resolve) => setTimeout(resolve, waitTime));
-    }
-  }
-
-  // Request deduplication - prevent multiple identical requests
-  async deduplicateRequest<T>(
-    key: string,
-    requestFn: () => Promise<T>
-  ): Promise<T> {
-    if (this.pendingRequests.has(key)) {
-      console.log(`Deduplicating request: ${key}`);
-      return this.pendingRequests.get(key) as Promise<T>;
-    }
-
-    const promise = requestFn().finally(() => {
-      this.pendingRequests.delete(key);
-    });
-
-    this.pendingRequests.set(key, promise);
-    return promise;
   }
 
   getStats(): {
     requestsInWindow: number;
     maxRequests: number;
-    backoffMultiplier: number;
-    nextAvailableTime?: number;
   } {
     const now = Date.now();
     const requestsInWindow = this.requests.filter(
       (time) => now - time < this.windowMs
     ).length;
 
-    let nextAvailableTime: number | undefined;
-    if (this.requests.length >= this.maxRequests) {
-      // Find the oldest request and calculate when it will expire from the window
-      const oldestRequest = Math.min(...this.requests);
-      nextAvailableTime = oldestRequest + this.windowMs;
-    }
-
     return {
       requestsInWindow,
       maxRequests: this.maxRequests,
-      backoffMultiplier: this.backoffMultiplier,
-      nextAvailableTime,
     };
   }
 }
@@ -210,4 +149,4 @@ export const getCacheTTL = (
 };
 
 export const apiCache = new MemoryCache(1000);
-export const rateLimiter = new RateLimiter(10, 60000); // 6 requests per minute to be very safe
+export const rateLimiter = new RateLimiter(100, 60000); // 10 requests per minute

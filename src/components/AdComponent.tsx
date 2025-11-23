@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { unifiedStyles } from "@/utils/themeUtils";
 
 interface AdComponentProps {
   adSlot: string;

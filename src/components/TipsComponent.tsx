@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { unifiedStyles } from "@/utils/themeUtils";
 
 interface TipsComponentProps {
   isDarkMode?: boolean;
@@ -120,17 +121,7 @@ export default function TipsComponent({
   }, [tips.length]);
 
   return (
-    <div
-      className={`rounded-xl border backdrop-blur-md transition-all duration-300 ${
-        isDarkMode
-          ? "bg-gray-800/50 border-gray-700"
-          : "bg-white/50 border-gray-200"
-      } ${className}`}
-      style={{
-        borderRadius: "var(--radius-card)",
-        boxShadow: "var(--shadow-card)",
-      }}
-    >
+    <div className={`${unifiedStyles.card.base} ${className}`}>
       <div className="p-6">
         <div className="flex items-center mb-6">
           <span className="text-2xl mr-3">💡</span>
