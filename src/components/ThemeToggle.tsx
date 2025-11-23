@@ -2,49 +2,27 @@
 
 import { useEffect, useState } from "react";
 
-function applyTheme(isDark: boolean) {
-  const root = document.documentElement;
-  const body = document.body;
-  if (isDark) {
-    root.classList.add("dark");
-    body.classList.add("dark");
-    root.setAttribute("data-theme", "dark");
-  } else {
-    root.classList.remove("dark");
-    body.classList.remove("dark");
-    root.setAttribute("data-theme", "light");
-  }
-}
-
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Initialize from DOM/localStorage once mounted
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("theme");
-      const systemPrefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
-      const initialDark = stored ? stored === "dark" : systemPrefersDark;
-      setIsDark(initialDark);
-      applyTheme(initialDark);
-      setIsLoaded(true);
-    } catch (e) {
-      // noop
-    }
+    const html = document.documentElement;
+    setIsDark(html.classList.contains("dark"));
   }, []);
 
   const toggle = () => {
-    const next = !isDark;
-    setIsDark(next);
-    try {
-      localStorage.setItem("theme", next ? "dark" : "light");
-    } catch (e) {
-      // noop
+    const html = document.documentElement;
+    const current = html.classList.contains("dark"); // real current state
+
+    if (current) {
+      html.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setIsDark(false);
+    } else {
+      html.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setIsDark(true);
     }
-    applyTheme(next);
   };
 
   return (
@@ -87,13 +65,6 @@ export default function ThemeToggle() {
           <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 1 0 9.79 9.79Z" />
         </svg>
       </div>
-
-      {/* Loading state indicator */}
-      {!isLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      )}
     </button>
   );
 }

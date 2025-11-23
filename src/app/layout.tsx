@@ -4,6 +4,7 @@ import "./globals.css";
 import ThemeToggle from "../components/ThemeToggle";
 import ApiStatusIndicator from "../components/ApiStatusIndicator";
 import { Analytics } from "@vercel/analytics/next";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,43 +27,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <Script id="theme-script">
+          {`
+  try {
+    const saved = localStorage.getItem('theme');
+    const prefersDark = saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (prefersDark) document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme-ready', 'true');
+  } catch(e){}
+`}
+        </Script>
+
         <meta name="google-adsense-account" content="ca-pub-8579370544297692" />
-        <script
+        <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8579370544297692"
           crossOrigin="anonymous"
-        ></script>
+          strategy="afterInteractive"
+        ></Script>
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Prevent theme flash: set initial theme before React mounts */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var stored = localStorage.getItem('theme');
-                  var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var dark = stored ? stored === 'dark' : systemDark;
-                  var root = document.documentElement;
-                  var body = document.body;
-                  if (dark) {
-                    root.classList.add('dark');
-                    body && body.classList && body.classList.add('dark');
-                    root.setAttribute('data-theme', 'dark');
-                  } else {
-                    root.classList.remove('dark');
-                    body && body.classList && body.classList.remove('dark');
-                    root.setAttribute('data-theme', 'light');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
         <ThemeToggle />
         <ApiStatusIndicator />
         {children}

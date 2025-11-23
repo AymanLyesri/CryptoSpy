@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Cryptocurrency } from "../types/crypto";
-import { NewsItem } from "../types/news";
 import { useNewsData } from "../hooks/useNewsData";
 import AdComponent from "./AdComponent";
 import { newsApiService } from "@/services/newsApi";
@@ -280,7 +279,7 @@ export default function NewsComponent({
           {/* Bottom ad placement - only show if we have news items */}
           {!loading && news.length > 0 && (
             <AdComponent
-              adSlot="1234567890"
+              adSlot="2822503833"
               adFormat="rectangle"
               className="mt-6"
               style={{ minHeight: "250px" }}

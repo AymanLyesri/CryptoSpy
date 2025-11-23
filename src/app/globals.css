@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+html {
+  opacity: 0;
+}
+
+html[data-theme-ready] {
+  opacity: 1;
+  transition: opacity 1s ease;
+}
+
 /* CSS Variables for consistent design tokens */
 :root {
   /* Spacing tokens */
@@ -20,14 +29,5 @@
   /* Shadow tokens */
   --shadow-card: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-card-hover: 0 20px 40px -4px rgba(0, 0, 0, 0.15), 0 8px 12px -2px rgba(0, 0, 0, 0.1);
-}
-
-.dark {
-  /* Dark mode colors */
-  --bg-primary: rgb(17, 24, 39); /* gray-900 - main background */
-  --bg-secondary: rgb(31, 41, 55); /* gray-800 - card backgrounds */
-  
-  --shadow-card: 0 10px 25px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  --shadow-card-hover: 0 20px 40px -4px rgba(0, 0, 0, 0.4), 0 8px 12px -2px rgba(0, 0, 0, 0.3);
 }
 
