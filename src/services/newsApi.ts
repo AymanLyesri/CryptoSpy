@@ -24,7 +24,7 @@ class NewsApiService {
     if (cached) return cached;
 
     // Rate limiting check
-    if (!(await rateLimiter.canMakeRequest())) {
+    if (!rateLimiter.canMakeRequest()) {
       await rateLimiter.waitForNextSlot();
     }
 

@@ -114,6 +114,25 @@ class RateLimiter {
     this.requests.push(Date.now());
   }
 
+  recordFailure(): void {
+    // For now, just record it as a request since failures still count towards rate limits
+    this.recordRequest();
+  }
+
+  async waitForNextSlot(): Promise<void> {
+    // Wait until we can make a request
+    while (!this.canMakeRequest()) {
+      // Calculate time until the oldest request in the window expires
+      const now = Date.now();
+      const oldestRequest = Math.min(...this.requests);
+      const waitTime = this.windowMs - (now - oldestRequest) + 100; // Add 100ms buffer
+      
+      if (waitTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+
   getStats(): {
     requestsInWindow: number;
     maxRequests: number;
