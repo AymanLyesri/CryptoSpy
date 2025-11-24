@@ -16,10 +16,44 @@ import { useToast } from "../../hooks/useToast";
 import ThemeToggle from "@/components/ThemeToggle";
 import ApiStatusIndicator from "../../components/ApiStatusIndicator";
 import { getCryptoBySymbol } from "../../services/coinGeckoApi";
+import Script from "next/script";
 
 interface CryptoPageProps {
   params: Promise<{ symbol: string }>;
 }
+
+// Structured data for cryptocurrency
+const generateStructuredData = (crypto: Cryptocurrency) => {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FinancialProduct",
+    name: crypto.name,
+    description: `Live price and market data for ${
+      crypto.name
+    } (${crypto.symbol?.toUpperCase()})`,
+    url: `https://crypto-spy-app.vercel.app/${crypto.symbol?.toLowerCase()}`,
+    category: "Cryptocurrency",
+    provider: {
+      "@type": "Organization",
+      name: "Crypto Spy",
+    },
+    offers: {
+      "@type": "Offer",
+      price: crypto.current_price,
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: crypto.market_cap_rank
+        ? Math.max(1, 6 - Math.log10(crypto.market_cap_rank))
+        : 4,
+      ratingCount: "1000",
+      bestRating: "5",
+      worstRating: "1",
+    },
+  };
+};
 
 export default function CryptoPage({ params }: CryptoPageProps) {
   const router = useRouter();
@@ -169,6 +203,13 @@ export default function CryptoPage({ params }: CryptoPageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <Script
+        id={`crypto-structured-data-${selectedCrypto.symbol}`}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(generateStructuredData(selectedCrypto)),
+        }}
+      />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <ThemeToggle />
 

@@ -1,11 +1,6 @@
 import { Metadata } from "next";
 import { getCryptoBySymbol } from "../../services/coinGeckoApi";
 
-interface CryptoLayoutProps {
-  children: React.ReactNode;
-  params: Promise<{ symbol: string }>;
-}
-
 export async function generateMetadata({
   params,
 }: {
@@ -90,8 +85,4 @@ export async function generateMetadata({
       description: `Get live ${symbol.toUpperCase()} price, charts, and market data. Track cryptocurrency prices in real-time with Crypto Spy.`,
     };
   }
-}
-
-export default function CryptoLayout({ children }: CryptoLayoutProps) {
-  return <>{children}</>;
 }

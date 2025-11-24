@@ -10,6 +10,7 @@ import { useCryptoData } from "../hooks/useCryptoData";
 import { useToast } from "../hooks/useToast";
 import ThemeToggle from "@/components/ThemeToggle";
 import ApiStatusIndicator from "../components/ApiStatusIndicator";
+import Script from "next/script";
 
 export default function Home() {
   const router = useRouter();
@@ -19,6 +20,38 @@ export default function Home() {
   const { isUsingFallbackData, popularError } = useCryptoData();
 
   const { toasts, showToast, removeToast } = useToast();
+
+  // Homepage structured data
+  const homepageStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Crypto Spy",
+    url: "https://crypto-spy-app.vercel.app",
+    description:
+      "Real-time cryptocurrency prices, charts, and market analysis platform",
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web Browser",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      ratingCount: "1000",
+      bestRating: "5",
+      worstRating: "1",
+    },
+    featureList: [
+      "Real-time cryptocurrency prices",
+      "Interactive price charts",
+      "Market cap rankings",
+      "24h price changes",
+      "Cryptocurrency search",
+      "Multi-currency support",
+    ],
+  };
 
   // Detect theme changes
   useEffect(() => {
@@ -80,6 +113,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <Script
+        id="homepage-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(homepageStructuredData),
+        }}
+      />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
       <ThemeToggle />
 

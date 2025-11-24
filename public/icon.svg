@@ -1,0 +1,7 @@
+<!-- This is a placeholder SVG icon for Crypto Spy -->
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="#3b82f6"/>
+  <path d="M16 4L8 12v8l8 8 8-8v-8L16 4z" fill="white"/>
+  <path d="M16 8l-4 4v4l4 4 4-4v-4L16 8z" fill="#3b82f6"/>
+  <text x="16" y="18" text-anchor="middle" fill="white" font-family="Arial" font-size="8" font-weight="bold">$</text>
+</svg>
