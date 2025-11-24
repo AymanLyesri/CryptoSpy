@@ -644,6 +644,100 @@ export class CoinGeckoService {
     }
   }
 
+  // Get a specific cryptocurrency by symbol
+  static async getCryptoBySymbol(
+    symbol: string
+  ): Promise<Cryptocurrency | null> {
+    const normalizedSymbol = symbol.toLowerCase();
+    const cacheKey = `crypto_by_symbol_${normalizedSymbol}`;
+
+    try {
+      // First check if it's in our cached popular cryptos
+      const popularCacheKey = `popular_cryptos_50`;
+      const cachedPopularData =
+        apiCache.get<CoinGeckoMarketData[]>(popularCacheKey);
+      if (cachedPopularData && Array.isArray(cachedPopularData)) {
+        const matchingCoin = cachedPopularData.find(
+          (coin: CoinGeckoMarketData) =>
+            coin.symbol.toLowerCase() === normalizedSymbol
+        );
+        if (matchingCoin) {
+          return {
+            id: matchingCoin.id,
+            name: matchingCoin.name,
+            symbol: matchingCoin.symbol.toUpperCase(),
+            current_price: matchingCoin.current_price,
+            market_cap: matchingCoin.market_cap,
+            market_cap_rank: matchingCoin.market_cap_rank,
+            fully_diluted_valuation: matchingCoin.fully_diluted_valuation,
+            total_volume: matchingCoin.total_volume,
+            high_24h: matchingCoin.high_24h,
+            low_24h: matchingCoin.low_24h,
+            price_change_24h: matchingCoin.price_change_24h,
+            price_change_percentage_24h:
+              matchingCoin.price_change_percentage_24h,
+            price_change_percentage_7d: matchingCoin.price_change_percentage_7d,
+            price_change_percentage_30d:
+              matchingCoin.price_change_percentage_30d,
+            price_change_percentage_200d:
+              matchingCoin.price_change_percentage_200d,
+            price_change_percentage_1y: matchingCoin.price_change_percentage_1y,
+            market_cap_change_24h: matchingCoin.market_cap_change_24h,
+            market_cap_change_percentage_24h:
+              matchingCoin.market_cap_change_percentage_24h,
+            circulating_supply: matchingCoin.circulating_supply,
+            total_supply: matchingCoin.total_supply,
+            max_supply: matchingCoin.max_supply,
+            ath: matchingCoin.ath,
+            ath_change_percentage: matchingCoin.ath_change_percentage,
+            ath_date: matchingCoin.ath_date,
+            atl: matchingCoin.atl,
+            atl_change_percentage: matchingCoin.atl_change_percentage,
+            atl_date: matchingCoin.atl_date,
+            roi: matchingCoin.roi,
+            last_updated: matchingCoin.last_updated,
+            sparkline_in_7d: matchingCoin.sparkline_in_7d,
+            price_change_percentage_1h_in_currency:
+              matchingCoin.price_change_percentage_1h_in_currency,
+            price_change_percentage_24h_in_currency:
+              matchingCoin.price_change_percentage_24h_in_currency,
+            price_change_percentage_7d_in_currency:
+              matchingCoin.price_change_percentage_7d_in_currency,
+            image: matchingCoin.image,
+          };
+        }
+      }
+
+      // If not found in popular cryptos, search for it
+      const searchResults = await this.searchCryptos(symbol);
+      if (searchResults.length > 0) {
+        // Find exact symbol match
+        const exactMatch = searchResults.find(
+          (crypto) => crypto.symbol.toLowerCase() === normalizedSymbol
+        );
+        if (exactMatch) {
+          return exactMatch;
+        }
+
+        // If no exact match, return the first result (most relevant)
+        return searchResults[0];
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error getting crypto by symbol ${symbol}:`, error);
+
+      // Check cache for any previous results
+      const cachedResult = apiCache.get<Cryptocurrency>(cacheKey);
+      if (cachedResult) {
+        console.log("Returning cached crypto data for symbol:", symbol);
+        return cachedResult;
+      }
+
+      return null;
+    }
+  }
+
   // Utility method to get API usage statistics
   static getApiStats(): { cache: any; rateLimiter: any } {
     return {
@@ -652,3 +746,13 @@ export class CoinGeckoService {
     };
   }
 }
+
+// Export convenience functions
+export const getCryptoPriceHistory =
+  CoinGeckoService.getCryptoPriceHistory.bind(CoinGeckoService);
+export const getPopularCryptos =
+  CoinGeckoService.getPopularCryptos.bind(CoinGeckoService);
+export const searchCryptos =
+  CoinGeckoService.searchCryptos.bind(CoinGeckoService);
+export const getCryptoBySymbol =
+  CoinGeckoService.getCryptoBySymbol.bind(CoinGeckoService);
