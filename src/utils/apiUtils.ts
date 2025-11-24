@@ -126,9 +126,9 @@ class RateLimiter {
       const now = Date.now();
       const oldestRequest = Math.min(...this.requests);
       const waitTime = this.windowMs - (now - oldestRequest) + 100; // Add 100ms buffer
-      
+
       if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
   }

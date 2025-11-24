@@ -40,7 +40,7 @@ export default function RootLayout({
 `}
         </Script>
 
-        <meta name="google-adsense-account" content="ca-pub-8579370544297692" />
+        <meta name="google-adsense-account" content="ca-pub-8579370544297692">
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8579370544297692"
