@@ -199,7 +199,7 @@ export default function CryptoPage({ params }: CryptoPageProps) {
       <main className="pt-20 sm:pt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="mb-12">
             {/* Crypto Display */}
             <div className="grid grid-cols-1 lg:grid-cols-4 xl:grid-cols-4 gap-6">
               {/* Left Sidebar - Crypto Info */}

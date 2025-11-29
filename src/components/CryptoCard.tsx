@@ -7,24 +7,18 @@ import { useRouter } from "next/navigation";
 
 interface CryptoCardProps {
   crypto: Cryptocurrency;
-  onClick?: (crypto: Cryptocurrency) => void;
   className?: string;
 }
 
 export default function CryptoCard({
   crypto,
-  onClick,
   className = "",
 }: CryptoCardProps) {
   const router = useRouter();
   const [imageError, setImageError] = useState(false);
 
   const handleClick = () => {
-    if (onClick) {
-      onClick(crypto);
-    } else {
-      router.push(`/${crypto.symbol.toLowerCase()}`);
-    }
+    router.push(`/${crypto.symbol.toLowerCase()}`);
   };
 
   const priceData = formatters.percentage(

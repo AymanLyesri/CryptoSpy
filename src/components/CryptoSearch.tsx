@@ -252,11 +252,7 @@ export default function CryptoSearch({
             </div>
           )}
           {cryptosToShow.map((crypto: Cryptocurrency, index: number) => (
-            <CryptoCard
-              key={crypto.id}
-              crypto={crypto}
-              onClick={handleSelect}
-            />
+            <CryptoCard key={crypto.id} crypto={crypto} />
           ))}
         </div>
       )}

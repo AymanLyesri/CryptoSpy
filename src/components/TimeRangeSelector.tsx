@@ -42,9 +42,7 @@ export default function TimeRangeSelector({
               }
             `}
             style={{
-              boxShadow: isSelected
-                ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-                : "none",
+              boxShadow: isSelected ? "0 2px 8px rgba(0, 0, 0, 0.1)" : "none",
             }}
           >
             {option.label}
