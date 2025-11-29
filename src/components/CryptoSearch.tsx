@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Cryptocurrency } from "../types/crypto";
 import { useCryptoData } from "../hooks/useCryptoData";
+import CryptoCard from "./CryptoCard";
 import { unifiedStyles, formatters } from "@/utils/themeUtils";
 
 interface CryptoSearchProps {
@@ -175,39 +176,6 @@ export default function CryptoSearch({
     onSelect?.(crypto);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: price < 1 ? 4 : 2,
-    }).format(price);
-  };
-
-  const formatPercentage = (percentage: number | null) => {
-    if (percentage === null || percentage === undefined) {
-      return (
-        <span className="font-medium text-gray-500 dark:text-gray-400">
-          N/A
-        </span>
-      );
-    }
-
-    const isPositive = percentage > 0;
-    return (
-      <span
-        className={`font-medium ${
-          isPositive
-            ? "text-green-600 dark:text-green-400"
-            : "text-red-600 dark:text-red-400"
-        }`}
-      >
-        {isPositive ? "+" : ""}
-        {percentage.toFixed(2)}%
-      </span>
-    );
-  };
-
   return (
     <div
       ref={searchRef}
@@ -227,27 +195,17 @@ export default function CryptoSearch({
           }}
           placeholder={placeholder}
           className={`
-            ${compact ? unifiedStyles.input.compact : unifiedStyles.input.base}
+            ${compact ? "unified-input--compact" : "unified-input"}
             w-full pr-12
-            bg-white/80 dark:bg-gray-800/80 
-            text-gray-900 dark:text-gray-100 
-            placeholder:text-gray-500 dark:placeholder:text-gray-400 
-            focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 
-            transition-all duration-300
           `}
         />
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
           {isSearching || isLoadingPopular || isTyping ? (
-            <div
-              className={`animate-spin rounded-full h-5 w-5 border-2 border-t-transparent transition-colors duration-300 ${
-                isDarkMode ? "border-blue-400" : "border-blue-500"
-              }`}
-            ></div>
+            <div className="loading-spinner" />
           ) : (
             <svg
-              className={`w-5 h-5 transition-colors duration-300 ${
-                isDarkMode ? "text-gray-500" : "text-gray-400"
-              }`}
+              className="w-5 h-5"
+              style={{ color: "var(--text-muted)" }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -265,118 +223,58 @@ export default function CryptoSearch({
 
       {/* Dropdown */}
       {isOpen && cryptosToShow.length > 0 && (
-        <div
-          className={`${unifiedStyles.dropdown.container} absolute z-10 w-full mt-2`}
-        >
+        <div className="unified-dropdown absolute z-10 w-full mt-2 max-h-[32rem] overflow-y-auto">
           {!query.trim() && (
             <div
-              className={`px-6 py-3 text-xs font-medium border-b transition-colors duration-300 ${
-                isDarkMode
-                  ? "text-gray-400 border-gray-700 bg-gray-700/50"
-                  : "text-gray-500 border-gray-100 bg-gray-50/50"
-              }`}
+              className="px-6 py-3 text-xs font-semibold border-b flex items-center gap-2"
+              style={{
+                color: "var(--text-secondary)",
+                borderColor: "var(--border-primary)",
+                background: "var(--bg-overlay)",
+              }}
             >
+              <span className="text-base">🔥</span>
               Popular Cryptocurrencies
             </div>
           )}
           {query.trim() && query.length >= 2 && (
             <div
-              className={`px-6 py-3 text-xs font-medium border-b transition-colors duration-300 ${
-                isDarkMode
-                  ? "text-gray-400 border-gray-700 bg-gray-700/50"
-                  : "text-gray-500 border-gray-100 bg-gray-50/50"
-              }`}
+              className="px-6 py-3 text-xs font-semibold border-b flex items-center gap-2"
+              style={{
+                color: "var(--text-secondary)",
+                borderColor: "var(--border-primary)",
+                background: "var(--bg-overlay)",
+              }}
             >
-              Search Results for "{query}"
+              <span className="text-base">🔍</span>
+              {searchResults.length} result
+              {searchResults.length !== 1 ? "s" : ""} for "{query}"
             </div>
           )}
           {cryptosToShow.map((crypto: Cryptocurrency, index: number) => (
-            <div
+            <CryptoCard
               key={crypto.id}
-              onClick={() => handleSelect(crypto)}
-              className={`
-                ${
-                  compact
-                    ? unifiedStyles.dropdown.itemCompact
-                    : unifiedStyles.dropdown.item
-                }
-                ${
-                  index === highlightedIndex
-                    ? unifiedStyles.dropdown.itemHighlighted
-                    : ""
-                }
-              `}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    {crypto.image && (
-                      <img
-                        src={crypto.image}
-                        alt={crypto.name}
-                        className="w-6 h-6 rounded-full"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    )}
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900 dark:text-gray-100">
-                        {crypto.name}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 uppercase">
-                        {crypto.symbol}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
-                    {formatPrice(crypto.current_price)}
-                  </div>
-                  <div className="text-sm">
-                    {formatPercentage(crypto.price_change_percentage_24h)}
-                  </div>
-                </div>
-              </div>
-            </div>
+              crypto={crypto}
+              onClick={handleSelect}
+            />
           ))}
         </div>
       )}
 
       {/* No results */}
       {query.trim() !== "" && !isSearching && searchResults.length === 0 && (
-        <div
-          style={{
-            borderRadius: "var(--radius-card)",
-            boxShadow: "var(--shadow-card-hover)",
-          }}
-          className={`absolute z-10 w-full mt-2 border backdrop-blur-md transition-all duration-300 ${
-            isDarkMode
-              ? "bg-gray-800/95 border-gray-700"
-              : "bg-white/95 border-gray-200"
-          }`}
-        >
-          <div
-            className={`px-6 py-4 text-center transition-colors duration-300 ${
-              isDarkMode ? "text-gray-400" : "text-gray-500"
-            }`}
-          >
+        <div className="unified-card absolute z-10 w-full mt-2">
+          <div className="px-6 py-4 text-center text-secondary">
             {searchError ? (
-              <div
-                className={`transition-colors duration-300 ${
-                  isDarkMode ? "text-red-400" : "text-red-500"
-                }`}
-              >
+              <div style={{ color: "var(--color-error)" }}>
                 <div className="font-medium">Search Error</div>
                 <div className="text-sm">{searchError}</div>
               </div>
             ) : (
               <div>
                 <div
-                  className={`font-medium transition-colors duration-300 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-600"
-                  }`}
+                  className="font-medium"
+                  style={{ color: "var(--text-primary)" }}
                 >
                   No Results Found
                 </div>

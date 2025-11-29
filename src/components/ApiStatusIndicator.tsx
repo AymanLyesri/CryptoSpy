@@ -63,7 +63,7 @@ export default function ApiStatusIndicator() {
         `}
         title="API Status"
       >
-        API {isAtLimit ? "🚫" : isNearLimit ? "⚠️" : "✅"}
+        API {isAtLimit ? "Limit" : isNearLimit ? "Warning" : "OK"}
       </button>
 
       {/* Stats panel */}

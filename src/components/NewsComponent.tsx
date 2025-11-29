@@ -44,35 +44,33 @@ export default function NewsComponent({
 
   const formatTimeAgo = formatters.timeAgo;
 
-  const getSentimentIcon = (sentiment?: string): string => {
+  const getSentimentBadge = (sentiment?: string): string => {
     switch (sentiment) {
       case "positive":
-        return "📈";
+        return "Positive";
       case "negative":
-        return "📉";
+        return "Negative";
       default:
-        return "📰";
+        return "Neutral";
     }
   };
 
   return (
-    <div className={`${unifiedStyles.card.base} ${className}`}>
+    <section className={`unified-card ${className}`}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
-            <span className="text-2xl mr-3">📰</span>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h2
+              className="text-xl font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               {dynamicTitle}
             </h2>
           </div>
           {!loading && (
             <button
               onClick={refreshNews}
-              className={`p-2 rounded-lg transition-colors ${
-                isDarkMode
-                  ? "hover:bg-gray-700 text-gray-400 hover:text-gray-200"
-                  : "hover:bg-gray-100 text-gray-500 hover:text-gray-700"
-              }`}
+              className="unified-button--ghost !p-2"
               title="Refresh news"
             >
               <svg
@@ -93,7 +91,7 @@ export default function NewsComponent({
         </div>
 
         {lastUpdated && !loading && (
-          <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+          <div className="text-xs text-muted mb-4">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </div>
         )}
@@ -101,14 +99,14 @@ export default function NewsComponent({
         {error && (
           <div className="mb-4 p-3 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg">
             <p className="text-sm text-yellow-800 dark:text-yellow-200">
-              ⚠️ Using cached news data. {error}
+              <strong>Warning:</strong> Using cached news data. {error}
             </p>
           </div>
         )}
 
         <div className="space-y-4">
           {/* Top ad placement */}
-          <AdComponent
+          {/* <AdComponent
             adSlot="2822503833"
             className="mb-4"
             fallback={
@@ -118,25 +116,30 @@ export default function NewsComponent({
                 </span>
               </div>
             }
-          />
+          /> */}
 
           {loading && (
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`p-4 rounded-lg border animate-pulse ${
-                    isDarkMode
-                      ? "bg-gray-700/30 border-gray-600"
-                      : "bg-white/30 border-gray-200"
-                  }`}
-                >
+                <div key={i} className="unified-card !p-4 loading-pulse">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-16"></div>
-                    <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-12"></div>
+                    <div
+                      className="h-4 rounded w-16"
+                      style={{ background: "var(--border-secondary)" }}
+                    ></div>
+                    <div
+                      className="h-3 rounded w-12"
+                      style={{ background: "var(--border-secondary)" }}
+                    ></div>
                   </div>
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2"></div>
-                  <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-full"></div>
+                  <div
+                    className="h-4 rounded w-3/4 mb-2"
+                    style={{ background: "var(--border-secondary)" }}
+                  ></div>
+                  <div
+                    className="h-3 rounded w-full"
+                    style={{ background: "var(--border-secondary)" }}
+                  ></div>
                 </div>
               ))}
             </div>
@@ -144,10 +147,7 @@ export default function NewsComponent({
 
           {!loading && news.length === 0 && (
             <div className="text-center py-8">
-              <span className="text-4xl mb-4 block">📭</span>
-              <p className="text-gray-500 dark:text-gray-400">
-                No news available at the moment
-              </p>
+              <p className="text-secondary">No news available at the moment</p>
             </div>
           )}
 
@@ -170,11 +170,7 @@ export default function NewsComponent({
                   />
                 )} */}
                 <div
-                  className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
-                    isDarkMode
-                      ? "bg-gray-700/30 border-gray-600 hover:bg-gray-700/50"
-                      : "bg-white/30 border-gray-200 hover:bg-white/60"
-                  }`}
+                  className="unified-card !p-4 cursor-pointer"
                   onClick={() => item.url && window.open(item.url, "_blank")}
                 >
                   <div className="flex items-start justify-between mb-2">
@@ -187,26 +183,37 @@ export default function NewsComponent({
                         {item.category}
                       </span>
                       {item.sentiment && (
-                        <span className="text-sm">
-                          {getSentimentIcon(item.sentiment)}
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                            item.sentiment === "positive"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                              : item.sentiment === "negative"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          {getSentimentBadge(item.sentiment)}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-muted">
                       {formatTimeAgo(item.publishedAt)}
                     </span>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
+                  <h3
+                    className="font-semibold mb-2 line-clamp-2"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {item.title}
                   </h3>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                  <p className="text-sm text-secondary line-clamp-2 mb-2">
                     {item.summary}
                   </p>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-muted">
                       {item.source.name}
                     </span>
                     {item.currencies && item.currencies.length > 0 && (
@@ -214,13 +221,17 @@ export default function NewsComponent({
                         {item.currencies.slice(0, 3).map((currency) => (
                           <span
                             key={currency}
-                            className="text-xs px-1 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded"
+                            className="text-xs px-1 py-0.5 rounded"
+                            style={{
+                              background: "var(--bg-overlay)",
+                              color: "var(--text-primary)",
+                            }}
                           >
                             {currency}
                           </span>
                         ))}
                         {item.currencies.length > 3 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-muted">
                             +{item.currencies.length - 3}
                           </span>
                         )}
@@ -232,7 +243,7 @@ export default function NewsComponent({
             ))}
 
           {/* Bottom ad placement - only show if we have news items */}
-          {!loading && news.length > 0 && (
+          {/* {!loading && news.length > 0 && (
             <AdComponent
               adSlot="2822503833"
               adFormat="rectangle"
@@ -247,9 +258,9 @@ export default function NewsComponent({
                 </div>
               }
             />
-          )}
+          )} */}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,61 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
+import { useState, useMemo, useEffect } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { PriceDataPoint, TimeRange } from "../types/chartData";
-import ChartWrapper from "./ChartWrapper";
 import { formatters } from "../utils/themeUtils";
-
-// Dynamically import Chart.js components to avoid SSR issues
-const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center h-80">
-      <div className="animate-pulse text-gray-500 dark:text-gray-400">
-        Loading chart...
-      </div>
-    </div>
-  ),
-});
-
-// Dynamically register Chart.js components
-let ChartJS: any = null;
-const registerChartComponents = async () => {
-  if (typeof window !== "undefined" && !ChartJS) {
-    try {
-      const {
-        Chart,
-        CategoryScale,
-        LinearScale,
-        PointElement,
-        LineElement,
-        Title,
-        Tooltip,
-        Legend,
-        Filler,
-      } = await import("chart.js");
-
-      Chart.register(
-        CategoryScale,
-        LinearScale,
-        PointElement,
-        LineElement,
-        Title,
-        Tooltip,
-        Legend,
-        Filler
-      );
-
-      // Set default Chart.js options to prevent DOM access issues
-      Chart.defaults.responsive = true;
-      Chart.defaults.maintainAspectRatio = false;
-
-      ChartJS = Chart;
-    } catch (error) {
-      console.error("Failed to register Chart.js components:", error);
-    }
-  }
-};
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface CryptoPriceChartProps {
   data: PriceDataPoint[];
@@ -65,6 +18,14 @@ interface CryptoPriceChartProps {
   currentPrice: number;
 }
 
+// Helper to get CSS variable values
+const getCSSVariable = (variable: string): string => {
+  if (typeof window === "undefined") return "";
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(variable)
+    .trim();
+};
+
 export default function CryptoPriceChart({
   data,
   timeRange,
@@ -72,58 +33,42 @@ export default function CryptoPriceChart({
   cryptoSymbol,
   currentPrice,
 }: CryptoPriceChartProps) {
-  const chartRef = useRef<any>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const [chartReady, setChartReady] = useState(false);
+  // State for theme-reactive colors
+  const [chartColors, setChartColors] = useState({
+    success: "hsl(142, 76%, 36%)",
+    error: "hsl(0, 84%, 60%)",
+  });
 
-  // Handle component mounting and Chart.js registration
+  // Update colors when theme changes
   useEffect(() => {
-    const initializeChart = async () => {
-      if (typeof window !== "undefined") {
-        try {
-          await registerChartComponents();
-          setIsMounted(true);
-          // Add a small delay to ensure DOM is ready
-          setTimeout(() => {
-            setChartReady(true);
-          }, 100);
-        } catch (error) {
-          console.error("Chart initialization error:", error);
-          setIsMounted(true);
-          setChartReady(false);
+    const updateColors = () => {
+      const successColor = getCSSVariable("--color-success-600");
+      const errorColor = getCSSVariable("--color-error-600");
+
+      setChartColors({
+        success: successColor || "hsl(142, 76%, 36%)",
+        error: errorColor || "hsl(0, 84%, 60%)",
+      });
+    };
+
+    updateColors();
+
+    // Listen for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class") {
+          updateColors();
         }
-      }
-    };
+      });
+    });
 
-    initializeChart();
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-    return () => {
-      setIsMounted(false);
-      setChartReady(false);
-    };
+    return () => observer.disconnect();
   }, []);
-
-  // Force chart re-render when timeRange changes
-  useEffect(() => {
-    // No need to manually destroy chart - react-chartjs-2 handles this
-    // The key prop change will force a complete re-render
-  }, [timeRange, isMounted, chartReady]);
-
-  // No need for complex theme detection - CSS variables handle this automatically
-
-  // Early return if not mounted or chart not ready (prevents SSR issues)
-  if (!isMounted || !chartReady) {
-    return (
-      <div className="unified-card">
-        <div className="text-center py-12">
-          <div className="loading-pulse">
-            <div className="text-muted text-lg mb-4">Loading chart...</div>
-            <div className="loading-spinner mx-auto mb-4"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Early return if no valid data
   if (!data || data.length === 0) {
@@ -163,54 +108,6 @@ export default function CryptoPriceChart({
     );
   }
 
-  // Function to get actual CSS variable values at runtime
-  const getCSSVariableValue = (variableName: string): string => {
-    if (typeof window === "undefined") return "#000000"; // SSR fallback
-    return (
-      getComputedStyle(document.documentElement)
-        .getPropertyValue(variableName)
-        .trim() || "#000000"
-    );
-  };
-
-  // Convert RGB color to RGBA with opacity
-  const rgbToRgba = (rgb: string, opacity: number): string => {
-    // Handle both "rgb(r, g, b)" and "#rrggbb" formats
-    if (rgb.startsWith("rgb(")) {
-      return rgb.replace("rgb(", "rgba(").replace(")", `, ${opacity})`);
-    } else if (rgb.startsWith("#")) {
-      // Convert hex to rgba
-      const hex = rgb.replace("#", "");
-      const r = parseInt(hex.substr(0, 2), 16);
-      const g = parseInt(hex.substr(2, 2), 16);
-      const b = parseInt(hex.substr(4, 2), 16);
-      return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-    }
-    return `${rgb}${Math.round(opacity * 255)
-      .toString(16)
-      .padStart(2, "0")}`; // fallback for other formats
-  };
-
-  // Get actual resolved colors for Chart.js
-  const getResolvedChartColors = () => {
-    const successColor = getCSSVariableValue("--color-success-600");
-    const errorColor = getCSSVariableValue("--color-error-600");
-
-    return {
-      positive: successColor,
-      negative: errorColor,
-      positiveLight: rgbToRgba(successColor, 0.1),
-      negativeLight: rgbToRgba(errorColor, 0.1),
-      textPrimary: getCSSVariableValue("--text-primary"),
-      textSecondary: getCSSVariableValue("--text-secondary"),
-      gridColor: getCSSVariableValue("--text-muted"),
-      tooltipBg: getCSSVariableValue("--bg-card"),
-      tooltipBorder: getCSSVariableValue("--border-primary"),
-    };
-  };
-
-  const resolvedColors = getResolvedChartColors();
-
   // Format timestamp based on time range
   const formatTimestamp = (timestamp: number): string => {
     const date = new Date(timestamp);
@@ -245,177 +142,104 @@ export default function CryptoPriceChart({
   // Use unified formatter from themeUtils
   const formatPrice = formatters.price;
 
-  // Calculate price change using valid data
+  // Transform ALL data once - don't recalculate based on timeRange
+  const allChartData = useMemo(
+    () =>
+      validData.map((point) => ({
+        date: formatTimestamp(point.timestamp),
+        price: point.price,
+        timestamp: point.timestamp,
+      })),
+    [validData] // Only recalculate when validData changes, not timeRange
+  );
+
+  // Filter data based on timeRange - this allows smooth transitions
+  const filteredData = useMemo(() => {
+    if (allChartData.length === 0) return allChartData;
+
+    // Get the latest timestamp as reference
+    const latestTimestamp = allChartData[allChartData.length - 1].timestamp;
+    const latestDate = new Date(latestTimestamp);
+
+    // Calculate start date based on time range
+    const startDate = new Date(latestDate);
+    switch (timeRange) {
+      case "hourly":
+        startDate.setHours(latestDate.getHours() - 24);
+        break;
+      case "daily":
+        startDate.setDate(latestDate.getDate() - 7);
+        break;
+      case "weekly":
+        startDate.setDate(latestDate.getDate() - 30);
+        break;
+      case "monthly":
+        startDate.setMonth(latestDate.getMonth() - 12);
+        break;
+      default:
+        return allChartData;
+    }
+
+    // Filter data points that are within the time range
+    return allChartData.filter((item) => {
+      const itemDate = new Date(item.timestamp);
+      return itemDate >= startDate;
+    });
+  }, [allChartData, timeRange]);
+
+  // Calculate price change using filtered data
   const priceChange =
-    validData.length > 1
-      ? ((validData[validData.length - 1].price - validData[0].price) /
-          validData[0].price) *
+    filteredData.length > 1
+      ? ((filteredData[filteredData.length - 1].price - filteredData[0].price) /
+          filteredData[0].price) *
         100
       : 0;
 
   const isPositiveChange = priceChange >= 0;
 
-  // Prepare chart data with theme-aware colors using valid data
-  const chartData = {
-    labels: validData.map((point) => formatTimestamp(point.timestamp)),
-    datasets: [
-      {
-        label: `${cryptoName} Price`,
-        data: validData.map((point) => point.price),
-        borderColor: isPositiveChange
-          ? resolvedColors.positive
-          : resolvedColors.negative,
-        backgroundColor: isPositiveChange
-          ? resolvedColors.positiveLight
-          : resolvedColors.negativeLight,
-        borderWidth: 3,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 8,
-        pointHoverBackgroundColor: isPositiveChange
-          ? resolvedColors.positive
-          : resolvedColors.negative,
-        pointHoverBorderColor: "var(--bg-card)",
-        pointHoverBorderWidth: 3,
-        pointBorderWidth: 0,
-      },
-    ],
-  };
+  // Memoize chart color based on price change and theme colors
+  const chartColor = useMemo(
+    () => (isPositiveChange ? chartColors.success : chartColors.error),
+    [isPositiveChange, chartColors]
+  );
 
-  // Chart options with theme-aware styling
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    // Add resize observer configuration to prevent null reference errors
-    resizeDelay: 50,
-    interaction: {
-      mode: "index" as const,
-      intersect: false,
-    },
-    animation: {
-      duration: 750,
-      easing: "easeInOutQuart" as const,
-    },
-    // Prevent Chart.js from trying to access DOM during SSR
-    onResize: (chart: any, size: any) => {
-      if (typeof window === "undefined" || !chart.canvas) return;
-      try {
-        chart.resize();
-      } catch (error) {
-        console.warn("Chart resize error:", error);
-      }
-    },
-    plugins: {
-      legend: {
-        display: false,
+  // Chart configuration with dynamic colors
+  const chartConfig = useMemo(
+    () => ({
+      price: {
+        label: "Price",
+        color: chartColor,
       },
-      tooltip: {
-        backgroundColor: resolvedColors.tooltipBg,
-        titleColor: resolvedColors.textPrimary,
-        bodyColor: resolvedColors.textPrimary,
-        borderColor: resolvedColors.tooltipBorder,
-        borderWidth: 1,
-        displayColors: false,
-        cornerRadius: 12,
-        padding: 12,
-        titleFont: {
-          size: 14,
-          weight: "bold" as const,
-        },
-        bodyFont: {
-          size: 13,
-          weight: "normal" as const,
-        },
-        callbacks: {
-          title: function (context: any) {
-            const dataIndex = context[0].dataIndex;
-            const timestamp = validData[dataIndex].timestamp;
-            return new Date(timestamp).toLocaleString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-          },
-          label: function (context: any) {
-            return `Price: ${formatPrice(context.parsed.y)}`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        display: true,
-        grid: {
-          display: false,
-        },
-        border: {
-          display: false,
-        },
-        ticks: {
-          color: resolvedColors.textSecondary,
-          font: {
-            size: 12,
-            weight: "normal" as const,
-          },
-          maxTicksLimit: timeRange === "hourly" ? 6 : 8,
-          padding: 8,
-        },
-      },
-      y: {
-        display: true,
-        position: "right" as const,
-        grid: {
-          color: resolvedColors.gridColor,
-          lineWidth: 1,
-        },
-        border: {
-          display: false,
-        },
-        ticks: {
-          color: resolvedColors.textSecondary,
-          font: {
-            size: 12,
-            weight: "normal" as const,
-          },
-          padding: 12,
-          callback: function (value: any) {
-            return formatPrice(value);
-          },
-        },
-      },
-    },
-    elements: {
-      point: {
-        hoverRadius: 10,
-        hitRadius: 15,
-      },
-    },
-  };
+    }),
+    [chartColor]
+  );
+
+  // Calculate Y-axis domain based on filtered data
+  const yAxisDomain = useMemo((): [number, number] => {
+    if (filteredData.length === 0) return [0, 100];
+
+    const prices = filteredData.map((d) => d.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+
+    // Add 2% padding for better visualization
+    const padding = (maxPrice - minPrice) * 0.02;
+
+    return [Math.max(0, minPrice - padding), maxPrice + padding];
+  }, [filteredData]);
 
   return (
-    <div className="unified-card">
+    <section className="unified-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <div className="text-center sm:text-left">
-          <h3
-            className="text-2xl sm:text-3xl font-bold mb-2"
-            style={{ color: resolvedColors.textPrimary }}
-          >
+          <h3 className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">
             {cryptoName}{" "}
-            <span
-              className="text-lg"
-              style={{ color: resolvedColors.textSecondary }}
-            >
+            <span className="text-lg text-muted-foreground">
               ({cryptoSymbol.toUpperCase()})
             </span>
           </h3>
           <div className="flex items-center justify-center sm:justify-start space-x-4">
-            <span
-              className="text-2xl sm:text-3xl font-bold"
-              style={{ color: resolvedColors.textPrimary }}
-            >
+            <span className="text-2xl sm:text-3xl font-bold text-foreground">
               {formatPrice(currentPrice)}
             </span>
             <span
@@ -431,103 +255,120 @@ export default function CryptoPriceChart({
           </div>
         </div>
         <div className="text-center sm:text-right">
-          <div
-            className="text-sm font-medium mb-1 px-3 py-1 rounded-full transition-colors duration-300"
-            style={{
-              color: getCSSVariableValue("--color-primary-600"),
-              backgroundColor: getCSSVariableValue("--bg-tertiary"),
-              border: `1px solid ${getCSSVariableValue("--color-primary-600")}`,
-            }}
-          >
+          <div className="text-sm font-medium mb-1 px-3 py-1 rounded-full transition-colors duration-300 bg-primary/10 text-primary border border-primary">
             {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)} Chart
           </div>
-          <div style={{ color: resolvedColors.textSecondary }}>
-            {validData.length} data points
+          <div className="text-muted-foreground">
+            {filteredData.length} data points
           </div>
         </div>
       </div>
 
-      <div className="h-80 relative overflow-hidden rounded-lg">
-        <ChartWrapper>
-          {isMounted && chartReady ? (
-            <Line
-              ref={chartRef}
-              data={chartData}
-              options={options}
-              key={`chart-${timeRange}-${validData.length}`}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div
-                style={{ color: resolvedColors.textSecondary }}
-                className="loading-pulse"
-              >
-                Initializing chart...
-              </div>
-            </div>
-          )}
-        </ChartWrapper>
-      </div>
+      <ChartContainer config={chartConfig} className="h-80 w-full">
+        <AreaChart
+          data={filteredData}
+          margin={{
+            left: 12,
+            right: 12,
+            top: 12,
+            bottom: 12,
+          }}
+        >
+          <defs>
+            <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={chartColor} stopOpacity={0.8} />
+              <stop offset="95%" stopColor={chartColor} stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            minTickGap={32}
+            tickFormatter={(value) => value}
+          />
+          <YAxis
+            tickLine={false}
+            axisLine={false}
+            tickMargin={8}
+            tickCount={6}
+            orientation="right"
+            domain={yAxisDomain}
+            tickFormatter={(value) => formatPrice(value)}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                labelFormatter={(value, payload) => {
+                  if (payload && payload.length > 0) {
+                    const timestamp = payload[0].payload.timestamp;
+                    return new Date(timestamp).toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
+                  }
+                  return value;
+                }}
+                formatter={(value) => formatPrice(Number(value))}
+                indicator="dot"
+              />
+            }
+          />
+          <Area
+            dataKey="price"
+            type="monotone"
+            fill="url(#fillPrice)"
+            fillOpacity={0.4}
+            stroke={chartColor}
+            strokeWidth={2}
+            isAnimationActive={true}
+            animationDuration={800}
+            animationEasing="ease-in-out"
+          />
+        </AreaChart>
+      </ChartContainer>
 
       {/* Chart Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-border">
         <div className="unified-card unified-card--compact text-center">
-          <div
-            className="text-xs font-semibold mb-1 uppercase tracking-wider"
-            style={{ color: resolvedColors.textSecondary }}
-          >
+          <div className="text-xs font-semibold mb-1 uppercase tracking-wider text-muted-foreground">
             High
           </div>
-          <div
-            className="text-lg font-bold"
-            style={{ color: resolvedColors.textPrimary }}
-          >
-            {formatPrice(Math.max(...validData.map((d) => d.price)))}
+          <div className="text-lg font-bold text-foreground">
+            {formatPrice(Math.max(...filteredData.map((d) => d.price)))}
           </div>
         </div>
         <div className="unified-card unified-card--compact text-center">
-          <div
-            className="text-xs font-semibold mb-1 uppercase tracking-wider"
-            style={{ color: resolvedColors.textSecondary }}
-          >
+          <div className="text-xs font-semibold mb-1 uppercase tracking-wider text-muted-foreground">
             Low
           </div>
-          <div
-            className="text-lg font-bold"
-            style={{ color: resolvedColors.textPrimary }}
-          >
-            {formatPrice(Math.min(...validData.map((d) => d.price)))}
+          <div className="text-lg font-bold text-foreground">
+            {formatPrice(Math.min(...filteredData.map((d) => d.price)))}
           </div>
         </div>
         <div className="unified-card unified-card--compact text-center">
-          <div
-            className="text-xs font-semibold mb-1 uppercase tracking-wider"
-            style={{ color: resolvedColors.textSecondary }}
-          >
+          <div className="text-xs font-semibold mb-1 uppercase tracking-wider text-muted-foreground">
             First
           </div>
-          <div
-            className="text-lg font-bold"
-            style={{ color: resolvedColors.textPrimary }}
-          >
-            {formatPrice(validData[0]?.price || 0)}
+          <div className="text-lg font-bold text-foreground">
+            {formatPrice(filteredData[0]?.price || 0)}
           </div>
         </div>
         <div className="unified-card unified-card--compact text-center">
-          <div
-            className="text-xs font-semibold mb-1 uppercase tracking-wider"
-            style={{ color: resolvedColors.textSecondary }}
-          >
+          <div className="text-xs font-semibold mb-1 uppercase tracking-wider text-muted-foreground">
             Latest
           </div>
-          <div
-            className="text-lg font-bold"
-            style={{ color: resolvedColors.textPrimary }}
-          >
-            {formatPrice(validData[validData.length - 1]?.price || 0)}
+          <div className="text-lg font-bold text-foreground">
+            {formatPrice(filteredData[filteredData.length - 1]?.price || 0)}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
