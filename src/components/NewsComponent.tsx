@@ -56,7 +56,7 @@ export default function NewsComponent({
   };
 
   return (
-    <section className={`unified-card ${className}`}>
+    <section id="news-section" className={`unified-card ${className}`}>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">

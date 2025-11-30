@@ -4,6 +4,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import AnimatedBackground from "@/components/AnimatedBackground";
+import AiChat from "@/components/AiChat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -164,6 +165,7 @@ export default function RootLayout({
       >
         <AnimatedBackground />
         {children}
+        <AiChat />
         <Analytics />
       </body>
     </html>

@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Search, BarChart3 } from "lucide-react";
+import {
+  ArrowRight,
+  TrendingUp,
+  Search,
+  BarChart3,
+  Sparkles,
+} from "lucide-react";
 
 export default function LandingHero() {
   const [isVisible, setIsVisible] = useState(false);
@@ -12,7 +18,10 @@ export default function LandingHero() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    <div
+      id="landing-hero"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+    >
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/10 dark:bg-white/5 rounded-full blur-3xl animate-float" />
@@ -88,15 +97,33 @@ export default function LandingHero() {
               />
             </button>
             <button
-              onClick={() =>
-                document
-                  .getElementById("search-section")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={() => {
+                // Scroll to top to reveal navbar
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                // Focus search after a short delay to ensure navbar is visible
+                setTimeout(() => {
+                  const searchInput = document.querySelector<HTMLInputElement>(
+                    "#crypto-search input"
+                  );
+                  searchInput?.focus();
+                }, 300);
+              }}
               className="unified-button--secondary px-8 py-4 rounded-xl font-semibold shadow-lg flex items-center gap-2"
             >
               <Search className="w-5 h-5" />
               Search Coins
+            </button>
+            <button
+              onClick={() => {
+                // Click the AI chat button to open it
+                const aiChatButton =
+                  document.querySelector<HTMLButtonElement>(".ai-chat-button");
+                aiChatButton?.click();
+              }}
+              className="unified-button--secondary px-8 py-4 rounded-xl font-semibold shadow-lg flex items-center gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              AI Assistant
             </button>
           </div>
 

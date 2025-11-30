@@ -17,7 +17,7 @@ export default function PopularCrypto({
   const { popularCryptos, isLoadingPopular } = useCryptoData();
 
   return (
-    <section className="mt-8 space-y-8">
+    <section id="popular-crypto" className="mt-8 space-y-8">
       {/* Popular Coins Section */}
       <div className="unified-card">
         <div className="p-6">

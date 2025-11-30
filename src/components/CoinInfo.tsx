@@ -56,7 +56,7 @@ export default function CoinInfo({ crypto }: CoinInfoProps) {
   };
 
   return (
-    <div className="unified-card h-fit">
+    <div id="coin-info" className="unified-card h-fit">
       {/* Main Header Section */}
       <div className="flex flex-col gap-4 mb-6">
         {/* Coin Identity */}

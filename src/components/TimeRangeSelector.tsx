@@ -20,6 +20,7 @@ export default function TimeRangeSelector({
 }: TimeRangeSelectorProps) {
   return (
     <div
+      id="time-range-selector"
       className="inline-flex p-1 rounded-xl backdrop-blur-sm"
       style={{
         background: "var(--bg-overlay)",

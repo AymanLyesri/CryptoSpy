@@ -46,7 +46,7 @@ export default function ApiStatusIndicator() {
   const isNearLimit = rateLimitUsage > 70;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div id="api-status-indicator" className="fixed bottom-4 left-4 z-50">
       {/* Toggle button */}
       <button
         onClick={() => setIsVisible(!isVisible)}

@@ -229,7 +229,7 @@ export default function CryptoPriceChart({
   }, [filteredData]);
 
   return (
-    <section className="unified-card">
+    <section id="crypto-chart" className="unified-card">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
         <div className="text-center sm:text-left">
           <h3 className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">

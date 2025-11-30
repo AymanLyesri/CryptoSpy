@@ -121,7 +121,7 @@ export default function TipsComponent({
   }, [tips.length]);
 
   return (
-    <section className={`unified-card ${className}`}>
+    <section id="tips-section" className={`unified-card ${className}`}>
       <div className="p-6">
         <div className="flex items-center mb-6">
           <h2

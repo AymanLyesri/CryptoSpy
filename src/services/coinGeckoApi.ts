@@ -46,6 +46,9 @@ interface CoinGeckoMarketData {
   price_change_percentage_1h_in_currency?: number;
   price_change_percentage_24h_in_currency?: number;
   price_change_percentage_7d_in_currency?: number;
+  price_change_percentage_30d_in_currency?: number;
+  price_change_percentage_200d_in_currency?: number;
+  price_change_percentage_1y_in_currency?: number;
 }
 
 interface CoinGeckoHistoricalData {
@@ -185,10 +188,18 @@ export class CoinGeckoService {
         low_24h: coin.low_24h,
         price_change_24h: coin.price_change_24h,
         price_change_percentage_24h: coin.price_change_percentage_24h,
-        price_change_percentage_7d: coin.price_change_percentage_7d,
-        price_change_percentage_30d: coin.price_change_percentage_30d,
-        price_change_percentage_200d: coin.price_change_percentage_200d,
-        price_change_percentage_1y: coin.price_change_percentage_1y,
+        price_change_percentage_7d:
+          coin.price_change_percentage_7d ??
+          coin.price_change_percentage_7d_in_currency,
+        price_change_percentage_30d:
+          coin.price_change_percentage_30d ??
+          coin.price_change_percentage_30d_in_currency,
+        price_change_percentage_200d:
+          coin.price_change_percentage_200d ??
+          coin.price_change_percentage_200d_in_currency,
+        price_change_percentage_1y:
+          coin.price_change_percentage_1y ??
+          coin.price_change_percentage_1y_in_currency,
         market_cap_change_24h: coin.market_cap_change_24h,
         market_cap_change_percentage_24h: coin.market_cap_change_percentage_24h,
         circulating_supply: coin.circulating_supply,
@@ -232,10 +243,18 @@ export class CoinGeckoService {
           low_24h: coin.low_24h,
           price_change_24h: coin.price_change_24h,
           price_change_percentage_24h: coin.price_change_percentage_24h,
-          price_change_percentage_7d: coin.price_change_percentage_7d,
-          price_change_percentage_30d: coin.price_change_percentage_30d,
-          price_change_percentage_200d: coin.price_change_percentage_200d,
-          price_change_percentage_1y: coin.price_change_percentage_1y,
+          price_change_percentage_7d:
+            coin.price_change_percentage_7d ??
+            coin.price_change_percentage_7d_in_currency,
+          price_change_percentage_30d:
+            coin.price_change_percentage_30d ??
+            coin.price_change_percentage_30d_in_currency,
+          price_change_percentage_200d:
+            coin.price_change_percentage_200d ??
+            coin.price_change_percentage_200d_in_currency,
+          price_change_percentage_1y:
+            coin.price_change_percentage_1y ??
+            coin.price_change_percentage_1y_in_currency,
           market_cap_change_24h: coin.market_cap_change_24h,
           market_cap_change_percentage_24h:
             coin.market_cap_change_percentage_24h,
@@ -311,10 +330,18 @@ export class CoinGeckoService {
         low_24h: coin.low_24h,
         price_change_24h: coin.price_change_24h,
         price_change_percentage_24h: coin.price_change_percentage_24h,
-        price_change_percentage_7d: coin.price_change_percentage_7d,
-        price_change_percentage_30d: coin.price_change_percentage_30d,
-        price_change_percentage_200d: coin.price_change_percentage_200d,
-        price_change_percentage_1y: coin.price_change_percentage_1y,
+        price_change_percentage_7d:
+          coin.price_change_percentage_7d ??
+          coin.price_change_percentage_7d_in_currency,
+        price_change_percentage_30d:
+          coin.price_change_percentage_30d ??
+          coin.price_change_percentage_30d_in_currency,
+        price_change_percentage_200d:
+          coin.price_change_percentage_200d ??
+          coin.price_change_percentage_200d_in_currency,
+        price_change_percentage_1y:
+          coin.price_change_percentage_1y ??
+          coin.price_change_percentage_1y_in_currency,
         market_cap_change_24h: coin.market_cap_change_24h,
         market_cap_change_percentage_24h: coin.market_cap_change_percentage_24h,
         circulating_supply: coin.circulating_supply,
@@ -676,12 +703,18 @@ export class CoinGeckoService {
             price_change_24h: matchingCoin.price_change_24h,
             price_change_percentage_24h:
               matchingCoin.price_change_percentage_24h,
-            price_change_percentage_7d: matchingCoin.price_change_percentage_7d,
+            price_change_percentage_7d:
+              matchingCoin.price_change_percentage_7d ??
+              matchingCoin.price_change_percentage_7d_in_currency,
             price_change_percentage_30d:
-              matchingCoin.price_change_percentage_30d,
+              matchingCoin.price_change_percentage_30d ??
+              matchingCoin.price_change_percentage_30d_in_currency,
             price_change_percentage_200d:
-              matchingCoin.price_change_percentage_200d,
-            price_change_percentage_1y: matchingCoin.price_change_percentage_1y,
+              matchingCoin.price_change_percentage_200d ??
+              matchingCoin.price_change_percentage_200d_in_currency,
+            price_change_percentage_1y:
+              matchingCoin.price_change_percentage_1y ??
+              matchingCoin.price_change_percentage_1y_in_currency,
             market_cap_change_24h: matchingCoin.market_cap_change_24h,
             market_cap_change_percentage_24h:
               matchingCoin.market_cap_change_percentage_24h,

@@ -233,6 +233,7 @@ export default function AnimatedBackground() {
 
   return (
     <canvas
+      id="animated-background"
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-0"
       style={{ opacity: isDark ? 0.6 : 0.8 }}

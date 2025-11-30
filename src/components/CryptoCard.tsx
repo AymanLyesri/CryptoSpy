@@ -65,6 +65,7 @@ export default function CryptoCard({
 
   return (
     <div
+      id={`crypto-card-${crypto.symbol.toLowerCase()}`}
       onClick={handleClick}
       className="unified-card !p-3 cursor-pointer"
       style={{
