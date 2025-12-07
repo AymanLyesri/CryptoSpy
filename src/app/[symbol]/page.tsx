@@ -277,7 +277,7 @@ export default function CryptoPage({ params }: CryptoPageProps) {
               </div>
             </div>
           </div>
-          <ApiStatusIndicator />
+          {/* <ApiStatusIndicator /> */}
         </div>
       </main>
     </div>

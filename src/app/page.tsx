@@ -113,7 +113,7 @@ export default function Home() {
           <PopularCrypto isDarkMode={isDarkMode} />
         </div>
       </main>
-      <ApiStatusIndicator />
+      {/* <ApiStatusIndicator /> */}
     </div>
   );
 }
