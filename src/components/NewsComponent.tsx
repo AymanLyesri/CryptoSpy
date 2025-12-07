@@ -21,6 +21,16 @@ export default function NewsComponent({
   selectedCrypto = null,
 }: NewsComponentProps) {
   const [dynamicTitle, setDynamicTitle] = useState(title || "Latest News");
+  const [expandedNewsIds, setExpandedNewsIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [loadingContent, setLoadingContent] = useState<Set<string>>(new Set());
+  const [newsContents, setNewsContents] = useState<Map<string, string>>(
+    new Map()
+  );
+  const [contentLoadingStatus, setContentLoadingStatus] = useState<
+    Map<string, boolean>
+  >(new Map());
 
   // Use the news hook to get dynamic data
   const { news, loading, error, refreshNews, lastUpdated } = useNewsData({
@@ -53,6 +63,103 @@ export default function NewsComponent({
       default:
         return "Neutral";
     }
+  };
+
+  // Function to fetch article content
+  const fetchArticleContent = async (
+    newsId: string,
+    newsUrl?: string
+  ): Promise<string> => {
+    if (!newsUrl) {
+      return "";
+    }
+
+    try {
+      const response = await fetch(newsUrl);
+      const html = await response.text();
+
+      // Extract main content from HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      // Try to find the main article content
+      let content = "";
+      const articleElement =
+        doc.querySelector("article") ||
+        doc.querySelector('[role="main"]') ||
+        doc.querySelector(".article-content") ||
+        doc.querySelector(".post-content") ||
+        doc.querySelector("main");
+
+      if (articleElement) {
+        // Get text content and clean it up
+        const paragraphs = articleElement.querySelectorAll("p");
+        content = Array.from(paragraphs)
+          .map((p) => p.textContent?.trim())
+          .filter((text) => text && text.length > 50)
+          .join("\n\n");
+      }
+
+      return content;
+    } catch (error) {
+      console.error("Failed to fetch article content:", error);
+      return "";
+    }
+  };
+
+  // Load all article contents on mount and when news changes
+  useEffect(() => {
+    if (news.length === 0 || loading) return;
+
+    const loadAllContents = async () => {
+      const newContents = new Map<string, string>();
+      const newLoadingStatus = new Map<string, boolean>();
+
+      for (const item of news) {
+        // Skip if already loaded
+        if (newsContents.has(item.id)) {
+          newContents.set(item.id, newsContents.get(item.id)!);
+          newLoadingStatus.set(item.id, true);
+          continue;
+        }
+
+        // Set loading status
+        newLoadingStatus.set(item.id, false);
+
+        // Fetch content
+        const content = await fetchArticleContent(item.id, item.url);
+
+        if (content) {
+          newContents.set(item.id, content);
+          newLoadingStatus.set(item.id, true);
+        }
+      }
+
+      setNewsContents(newContents);
+      setContentLoadingStatus(newLoadingStatus);
+    };
+
+    loadAllContents();
+  }, [news, loading]);
+
+  const toggleExpand = async (newsId: string) => {
+    const newExpandedIds = new Set(expandedNewsIds);
+
+    if (expandedNewsIds.has(newsId)) {
+      // Collapse
+      newExpandedIds.delete(newsId);
+    } else {
+      // Expand
+      newExpandedIds.add(newsId);
+    }
+
+    setExpandedNewsIds(newExpandedIds);
+  };
+
+  // Check if news item has expandable content
+  const hasExpandableContent = (item: NewsItem): boolean => {
+    const content = newsContents.get(item.id) || item.content;
+    return !!content && content.length > 0;
   };
 
   return (
@@ -212,7 +319,25 @@ export default function NewsComponent({
                     {item.summary}
                   </p>
 
-                  <div className="flex items-center justify-between">
+                  {/* Hidden full content for SEO/AdSense - always present but visually hidden */}
+                  {hasExpandableContent(item) && (
+                    <div
+                      className={expandedNewsIds.has(item.id) ? "" : "sr-only"}
+                      aria-hidden={!expandedNewsIds.has(item.id)}
+                    >
+                      <div
+                        className="mt-3 pt-3 border-t text-sm text-secondary"
+                        style={{ borderColor: "var(--border-secondary)" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="whitespace-pre-wrap">
+                          {newsContents.get(item.id) || item.content || ""}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between mt-3">
                     <span className="text-xs text-muted">
                       {item.source.name}
                     </span>
@@ -238,6 +363,57 @@ export default function NewsComponent({
                       </div>
                     )}
                   </div>
+
+                  {/* Expand/Collapse button - only show if there's content */}
+                  {hasExpandableContent(item) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpand(item.id);
+                      }}
+                      className="mt-3 w-full text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                      style={{
+                        background: "var(--bg-overlay)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {expandedNewsIds.has(item.id) ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 15l7-7 7 7"
+                            />
+                          </svg>
+                          Show Less
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                          Read More
+                        </span>
+                      )}
+                    </button>
+                  )}
                 </div>
               </React.Fragment>
             ))}
