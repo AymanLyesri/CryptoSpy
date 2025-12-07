@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Turbopack configuration (required for Next.js 16+)
+  turbopack: {},
+
   // Webpack configuration for Chart.js optimization
   webpack: (config, { isServer }) => {
     // Don't include chart.js in server bundles to prevent SSR issues

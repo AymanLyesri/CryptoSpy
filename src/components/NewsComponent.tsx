@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Cryptocurrency } from "../types/crypto";
+import { NewsItem } from "../types/news";
 import { useNewsData } from "../hooks/useNewsData";
 import AdComponent from "./AdComponent";
 import { newsApiService } from "@/services/newsApi";
